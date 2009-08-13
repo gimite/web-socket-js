@@ -96,6 +96,8 @@ if (!window.WebSocket) {
     }
     var container = document.createElement("div");
     container.id = "webSocketContainer";
+    // Puts the Flash out of the window. Note that we cannot use display: none or visibility: hidden
+    // here because it prevents Flash from loading at least in IE.
     container.style.position = "absolute";
     container.style.left = "-100px";
     container.style.top = "-100px";
