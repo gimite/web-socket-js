@@ -77,7 +77,9 @@ public class WebSocket extends EventDispatcher {
   
   public function close():void {
     main.log("close");
-    socket.close();
+    try {
+      socket.close();
+    } catch (ex:Error) { }
     readyState = CLOSED;
     // We don't fire any events here because it causes weird error:
     // > You are trying to call recursively into the Flash Player which is not allowed.
@@ -134,6 +136,7 @@ public class WebSocket extends EventDispatcher {
     socket.readBytes(buffer, pos);
     for (; pos < buffer.length; ++pos) {
       if (headerState != 4) {
+        // try to find "\r\n\r\n"
         if ((headerState == 0 || headerState == 2) && buffer[pos] == 0x0d) {
           ++headerState;
         } else if ((headerState == 1 || headerState == 3) && buffer[pos] == 0x0a) {

@@ -2,10 +2,6 @@ if (!window.WebSocket) {
 
   if (!window.console) console = {log: function(){ }, error: function(){ }};
   
-  if (!window.MessageEvent) {
-    // TODO
-  }
-  
   WebSocket = function(url, protocol) {
     var self = this;
     self.readyState = WebSocket.CONNECTING;
@@ -32,8 +28,13 @@ if (!window.WebSocket) {
       self.__flash.addEventListener("message", function(fe) {
         try {
           if (self.onmessage) {
-            var e = document.createEvent("MessageEvent");
-            e.initMessageEvent("message", false, false, fe.getData(), null, null, window);
+            var e;
+            if (window.MessageEvent) {
+              e = document.createEvent("MessageEvent");
+              e.initMessageEvent("message", false, false, fe.getData(), null, null, window);
+            } else { // IE
+              e = {data: fe.getData()};
+            }
             self.onmessage(e);
           }
         } catch (e) {
@@ -96,9 +97,8 @@ if (!window.WebSocket) {
     var container = document.createElement("div");
     container.id = "webSocketContainer";
     container.style.position = "absolute";
-    container.style.left = "0px";
-    container.style.top = "0px";
-    container.style.visibility = "hidden";
+    container.style.left = "-100px";
+    container.style.top = "-100px";
     var holder = document.createElement("div");
     holder.id = "webSocketFlash";
     container.appendChild(holder);
@@ -108,7 +108,6 @@ if (!window.WebSocket) {
       null, {bridgeName: "webSocket"}, null, null,
       function(e) {
         if (!e.success) console.error("[WebSocket] swfobject.embedSWF failed");
-        e.ref.style.visibility = "hidden";
       }
     );
     FABridge.addInitializationCallback("webSocket", function() {
