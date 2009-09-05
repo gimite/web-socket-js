@@ -1,3 +1,8 @@
+// Copyright: Hiroshi Ichikawa <http://gimite.net/en/>
+// Lincense: New BSD Lincense
+// Reference: http://dev.w3.org/html5/websockets/
+// Reference: http://tools.ietf.org/html/draft-hixie-thewebsocketprotocol-31
+
 package {
 
 import flash.display.*;
@@ -40,7 +45,7 @@ public class WebSocket extends EventDispatcher {
     if (!m) main.fatal("invalid url: " + url);
     this.scheme = m[1];
     this.host = m[2];
-    this.port = parseInt(m[4] || "81");
+    this.port = parseInt(m[4] || "80");
     this.path = m[5] || "/";
     this.origin = main.getOrigin();
     this.protocol = protocol;

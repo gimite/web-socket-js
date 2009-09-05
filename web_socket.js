@@ -1,3 +1,8 @@
+// Copyright: Hiroshi Ichikawa <http://gimite.net/en/>
+// Lincense: New BSD Lincense
+// Reference: http://dev.w3.org/html5/websockets/
+// Reference: http://tools.ietf.org/html/draft-hixie-thewebsocketprotocol-31
+
 if (!window.WebSocket) {
 
   if (!window.console) console = {log: function(){ }, error: function(){ }};
