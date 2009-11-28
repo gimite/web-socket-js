@@ -101,6 +101,7 @@ public class WebSocket extends EventDispatcher {
   
   private function onSocketConnect(event:Event):void {
     main.log("connected");
+    var hostValue:String = host + (port == 80 ? "" : ":" + port);
     var opt:String = "";
     if (protocol) opt += "WebSocket-Protocol: " + protocol + "\r\n";
     var req:String = StringUtil.substitute(
@@ -111,7 +112,7 @@ public class WebSocket extends EventDispatcher {
       "Origin: {2}\r\n" +
       "{3}" +
       "\r\n",
-      path, host, origin, opt);
+      path, hostValue, origin, opt);
     main.log("request header:\n" + req);
     socket.writeUTFBytes(req);
     socket.flush();
