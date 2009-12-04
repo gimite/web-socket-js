@@ -23,9 +23,19 @@ public class WebSocketMain extends Sprite {
   private var callerUrl:String;
 
   public function WebSocketMain() {
+    
+    // This is to avoid "You are trying to call recursively into the Flash Player ..."
+    // error which (I heard) happens when you pass bunch of messages.
+    // This workaround was written here:
+    // http://www.themorphicgroup.com/blog/2009/02/14/fabridge-error-you-are-trying-to-call-recursively-into-the-flash-player-which-is-not-allowed/
+    FABridge.EventsToCallLater["flash.events::Event"] = "true";
+    FABridge.EventsToCallLater["WebSocketMessageEvent"] = "true";
+    FABridge.EventsToCallLater["WebSocketStateEvent"] = "true";
+    
     var fab:FABridge = new FABridge();
     fab.rootObject = this;
     //log("Flash initialized");
+    
   }
   
   public function setCallerUrl(url:String):void {
