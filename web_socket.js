@@ -7,12 +7,12 @@ if (!window.WebSocket) {
 
   if (!window.console) console = {log: function(){ }, error: function(){ }};
   
-  WebSocket = function(url, protocol) {
+  WebSocket = function(url, protocol, proxyHost, proxyPort) {
     var self = this;
     self.readyState = WebSocket.CONNECTING;
     self.bufferedAmount = 0;
     WebSocket.__addTask(function() {
-      self.__flash = WebSocket.__flash.create(url, protocol);
+      self.__flash = WebSocket.__flash.create(url, protocol, proxyHost || null, proxyPort || 0);
       
       self.__flash.addEventListener("open", function(fe) {
         try {

@@ -15,6 +15,7 @@ import mx.core.*;
 import mx.controls.*;
 import mx.events.*;
 import mx.utils.*;
+import com.adobe.net.proxies.RFC2817Socket;
 
 [Event(name="message", type="WebSocketMessageEvent")]
 [Event(name="open", type="flash.events.Event")]
@@ -26,7 +27,7 @@ public class WebSocket extends EventDispatcher {
   private static var OPEN:int = 1;
   private static var CLOSED:int = 2;
   
-  private var socket:Socket;
+  private var socket:RFC2817Socket;
   private var main:WebSocketMain;
   private var scheme:String;
   private var host:String;
@@ -39,7 +40,7 @@ public class WebSocket extends EventDispatcher {
   private var readyState:int = CONNECTING;
   private var bufferedAmount:int = 0;
 
-  public function WebSocket(main:WebSocketMain, url:String, protocol:String) {
+  public function WebSocket(main:WebSocketMain, url:String, protocol:String, proxyHost:String = null, proxyPort:int = 0) {
     this.main = main;
     var m:Array = url.match(/^(\w+):\/\/([^\/:]+)(:(\d+))?(\/.*)?$/);
     if (!m) main.fatal("invalid url: " + url);
@@ -49,7 +50,15 @@ public class WebSocket extends EventDispatcher {
     this.path = m[5] || "/";
     this.origin = main.getOrigin();
     this.protocol = protocol;
-    socket = new Socket();
+        
+    socket = new RFC2817Socket();
+            
+    // if no proxy information is supplied, it acts like a normal Socket
+    // @see RFC2817Socket::connect
+    if (proxyHost != null && proxyPort != 0){      
+      socket.setProxyInfo(proxyHost, proxyPort);
+    } 
+    
     socket.addEventListener(Event.CLOSE, onSocketClose);
     socket.addEventListener(Event.CONNECT, onSocketConnect);
     socket.addEventListener(IOErrorEvent.IO_ERROR, onSocketIoError);
