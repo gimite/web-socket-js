@@ -31,14 +31,15 @@ if (!window.WebSocket) {
       });
       
       self.__flash.addEventListener("message", function(fe) {
+        var data = fe.getData();
         try {
           if (self.onmessage) {
             var e;
             if (window.MessageEvent) {
               e = document.createEvent("MessageEvent");
-              e.initMessageEvent("message", false, false, fe.getData(), null, null, window);
+              e.initMessageEvent("message", false, false, data, null, null, window);
             } else { // IE
-              e = {data: fe.getData()};
+              e = {data: data};
             }
             self.onmessage(e);
           }
