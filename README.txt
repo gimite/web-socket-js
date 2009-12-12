@@ -26,13 +26,6 @@ http://www.adobe.com/support/flashplayer/downloads.html
 I confirmed it works on Chrome 3, Firefox 3.5 and IE 8. It may not work in other browsers.
 It requires Flash Player 9 or later (probably).
 
-* Proxy considerations
-
-The WebSocket spec (http://tools.ietf.org/html/draft-hixie-thewebsocketprotocol-64) specifies instructions for User Agents to support proxied connections by implementing the HTTP CONNECT method.
-
-The AS3 Socket class doesn't implement this mechanism, which renders it useless for the scenarios where the user trying to open a socket is behind a proxy. 
-
-The class RFC2817Socket (by Christian Cantrell) effectively lets us implement this, as long as the proxy settings are known and provided by the interface that instantiates the WebSocket. As such, if you want to support proxied conncetions, you'll have to supply this information to the WebSocket constructor when Flash is being used. One way to go about it would be to ask the user for proxy settings information if the initial connection fails.
 
 * Flash socket policy file
 
@@ -47,6 +40,15 @@ http://www.lightsphere.com/dev/articles/flash_socket_policy.html
 for details and sample script to run socket policy file server.
 
 Actually, it's still better to provide socket policy file at port 843 even if you use web-socket-ruby. Flash always try to connect to port 843 first, so providing the file at port 843 makes startup faster.
+
+
+* Proxy considerations
+
+The WebSocket spec (http://tools.ietf.org/html/draft-hixie-thewebsocketprotocol-64) specifies instructions for User Agents to support proxied connections by implementing the HTTP CONNECT method.
+
+The AS3 Socket class doesn't implement this mechanism, which renders it useless for the scenarios where the user trying to open a socket is behind a proxy. 
+
+The class RFC2817Socket (by Christian Cantrell) effectively lets us implement this, as long as the proxy settings are known and provided by the interface that instantiates the WebSocket. As such, if you want to support proxied conncetions, you'll have to supply this information to the WebSocket constructor when Flash is being used. One way to go about it would be to ask the user for proxy settings information if the initial connection fails.
 
 
 * How to build WebSocketMain.swf
