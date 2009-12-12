@@ -40,7 +40,9 @@ public class WebSocket extends EventDispatcher {
   private var readyState:int = CONNECTING;
   private var bufferedAmount:int = 0;
 
-  public function WebSocket(main:WebSocketMain, url:String, protocol:String, proxyHost:String = null, proxyPort:int = 0) {
+  public function WebSocket(
+      main:WebSocketMain, url:String, protocol:String,
+      proxyHost:String = null, proxyPort:int = 0) {
     this.main = main;
     var m:Array = url.match(/^(\w+):\/\/([^\/:]+)(:(\d+))?(\/.*)?$/);
     if (!m) main.fatal("invalid url: " + url);
