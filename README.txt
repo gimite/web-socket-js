@@ -1,14 +1,18 @@
 * How to try
 
+Assuming you have Web server (e.g. Apache) running at http://example.com/ .
+
 - Download web_socket.rb from:
   http://github.com/gimite/web-socket-ruby/tree/master
-- Run sample Web Socket server (echo server) with:
-  $ ruby web-socket-ruby/lib/web_socket.rb server ws://localhost:10081
+- Run sample Web Socket server (echo server) in example.com with: (#1)
+  $ ruby web-socket-ruby/samples/echo_server.rb example.com 10081
 - If your server already provides socket policy file at port 843, modify the file to allow access to port 10081. Otherwise you can skip this step. See below for details.
 - Publish the web-socket-js directory with your Web server (e.g. put it in ~/public_html).
-- If you run your Web Socket server on remote host, change host name of ws://localhost:10081 in sample.html.
+- Change ws://localhost:10081 to ws://example.com:10081 in sample.html.
 - Open sample.html in your browser.
 - After "onopen" is shown, input something, click [Send] and confirm echo back.
+
+#1: First argument of echo_server.rb means that it accepts Web Socket connection from HTML pages in example.com.
 
 
 * How to debug
@@ -16,6 +20,7 @@
 If sample.html doesn't work, check these:
 
 - It doesn't work when you open sample.html as local file i.e. file:///.../sample.html. Open it via Web server.
+- Make sure port 10081 is not blocked by your server/client's firewall.
 - Use Developer Tools (Chrome/Safari) or Firebug (Firefox) to see if console.log outputs any errors.
 - Install debugger version of Flash Player available here to see Flash errors:
 http://www.adobe.com/support/flashplayer/downloads.html
@@ -25,6 +30,8 @@ http://www.adobe.com/support/flashplayer/downloads.html
 
 I confirmed it works on Chrome 3, Firefox 3.5 and IE 8. It may not work in other browsers.
 It requires Flash Player 9 or later (probably).
+
+On Chrome 4 Dev Channel, it just uses native Web Socket implementation.
 
 
 * Flash socket policy file
