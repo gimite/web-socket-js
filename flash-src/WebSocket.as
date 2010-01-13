@@ -114,6 +114,10 @@ public class WebSocket extends EventDispatcher {
     main.log("connected");
     var hostValue:String = host + (port == 80 ? "" : ":" + port);
     var opt:String = "";
+
+    var cookie:String;
+    cookie = ExternalInterface.call("function(){return document.cookie}");
+
     if (protocol) opt += "WebSocket-Protocol: " + protocol + "\r\n";
     var req:String = StringUtil.substitute(
       "GET {0} HTTP/1.1\r\n" +
@@ -121,9 +125,10 @@ public class WebSocket extends EventDispatcher {
       "Connection: Upgrade\r\n" +
       "Host: {1}\r\n" +
       "Origin: {2}\r\n" +
+      "Cookie: {4}\r\n" +
       "{3}" +
       "\r\n",
-      path, hostValue, origin, opt);
+      path, hostValue, origin, opt, cookie);
     main.log("request header:\n" + req);
     socket.writeUTFBytes(req);
     socket.flush();
