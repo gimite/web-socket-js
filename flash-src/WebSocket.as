@@ -39,10 +39,12 @@ public class WebSocket extends EventDispatcher {
   private var headerState:int = 0;
   private var readyState:int = CONNECTING;
   private var bufferedAmount:int = 0;
+  private var headers:String;
 
   public function WebSocket(
       main:WebSocketMain, url:String, protocol:String,
-      proxyHost:String = null, proxyPort:int = 0) {
+      proxyHost:String = null, proxyPort:int = 0,
+      headers:String = null) {
     this.main = main;
     var m:Array = url.match(/^(\w+):\/\/([^\/:]+)(:(\d+))?(\/.*)?$/);
     if (!m) main.fatal("invalid url: " + url);
@@ -52,7 +54,11 @@ public class WebSocket extends EventDispatcher {
     this.path = m[5] || "/";
     this.origin = main.getOrigin();
     this.protocol = protocol;
-        
+    // if present and not the empty string, headers MUST end with \r\n
+    // headers should be zero or more complete lines, for example
+    // "Header1: xxx\r\nHeader2: yyyy\r\n"
+    this.headers = headers;
+    
     socket = new RFC2817Socket();
             
     // if no proxy information is supplied, it acts like a normal Socket
@@ -118,8 +124,10 @@ public class WebSocket extends EventDispatcher {
       cookie = ExternalInterface.call("function(){return document.cookie}");
     }
     var opt:String = "";
-
     if (protocol) opt += "WebSocket-Protocol: " + protocol + "\r\n";
+    // if caller passes additional headers they must end with "\r\n"
+    if (headers) opt += headers;
+    
     var req:String = StringUtil.substitute(
       "GET {0} HTTP/1.1\r\n" +
       "Upgrade: WebSocket\r\n" +

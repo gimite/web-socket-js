@@ -43,9 +43,11 @@ public class WebSocketMain extends Sprite {
   }
 
   public function create(
-      url:String, protocol:String, proxyHost:String = null, proxyPort:int = 0):WebSocket {
+      url:String, protocol:String,
+      proxyHost:String = null, proxyPort:int = 0,
+      headers:String = null):WebSocket {
     loadPolicyFile(null);
-    return new WebSocket(this, url, protocol, proxyHost, proxyPort);
+    return new WebSocket(this, url, protocol, proxyHost, proxyPort, headers);
   }
 
   public function getOrigin():String {
