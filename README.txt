@@ -49,6 +49,13 @@ for details and sample script to run socket policy file server.
 Actually, it's still better to provide socket policy file at port 843 even if you use web-socket-ruby. Flash always try to connect to port 843 first, so providing the file at port 843 makes startup faster.
 
 
+* Cookie considerations
+
+Cookie is sent if Web Socket host is the same as the origin of JavaScript. Otherwise it is not sent, because I don't know way to send right Cookie (which is Cookie of the host of Web Socket, I heard).
+
+Note that it's technically possible that client sends arbitrary string as Cookie and any other headers (by modifying this library for example) once you place Flash socket policy file in your server. So don't trust Cookie and other headers if you allow connection from untrusted origin.
+
+
 * Proxy considerations
 
 The WebSocket spec (http://tools.ietf.org/html/draft-hixie-thewebsocketprotocol-64) specifies instructions for User Agents to support proxied connections by implementing the HTTP CONNECT method.
