@@ -52,6 +52,10 @@ public class WebSocketMain extends Sprite {
     return (URLUtil.getProtocol(this.callerUrl) + "://" +
       URLUtil.getServerNameWithPort(this.callerUrl)).toLowerCase();
   }
+  
+  public function getCallerHost():String {
+    return URLUtil.getServerName(this.callerUrl);
+  }
 
   public function loadPolicyFile(url:String):void {
     if (policyLoaded && !url) return;

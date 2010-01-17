@@ -113,10 +113,11 @@ public class WebSocket extends EventDispatcher {
   private function onSocketConnect(event:Event):void {
     main.log("connected");
     var hostValue:String = host + (port == 80 ? "" : ":" + port);
+    var cookie:String = "";
+    if (main.getCallerHost() == host) {
+      cookie = ExternalInterface.call("function(){return document.cookie}");
+    }
     var opt:String = "";
-
-    var cookie:String;
-    cookie = ExternalInterface.call("function(){return document.cookie}");
 
     if (protocol) opt += "WebSocket-Protocol: " + protocol + "\r\n";
     var req:String = StringUtil.substitute(
