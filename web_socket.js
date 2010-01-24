@@ -157,10 +157,13 @@ if (!window.WebSocket) {
    * @param {string} type
    */
   function WebSocket_FireEvent(object, type) {
-    return function() {
+    return function(data) {
       var event = new WebSocketEvent();
       event.initEvent(type, true, true);
       event.target = event.currentTarget = object;
+      for (var key in data) {
+        event[key] = data[key];
+      }
       object.dispatchEvent(event, arguments);
     };
   }
