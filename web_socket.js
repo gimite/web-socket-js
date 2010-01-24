@@ -1,7 +1,7 @@
 // Copyright: Hiroshi Ichikawa <http://gimite.net/en/>
 // Lincense: New BSD Lincense
 // Reference: http://dev.w3.org/html5/websockets/
-// Reference: http://tools.ietf.org/html/draft-hixie-thewebsocketprotocol-31
+// Reference: http://tools.ietf.org/html/draft-hixie-thewebsocketprotocol
 
 if (!window.WebSocket) {
 
