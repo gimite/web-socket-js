@@ -6,7 +6,7 @@
 if (!window.WebSocket) {
 
   if (!window.console) console = {log: function(){ }, error: function(){ }};
-  
+
   WebSocket = function(url, protocol, proxyHost, proxyPort, headers) {
     var self = this;
     self.readyState = WebSocket.CONNECTING;
@@ -14,7 +14,7 @@ if (!window.WebSocket) {
     WebSocket.__addTask(function() {
       self.__flash =
         WebSocket.__flash.create(url, protocol, proxyHost || null, proxyPort || 0, headers || null);
-      
+
       self.__flash.addEventListener("open", function(fe) {
         try {
           if (self.onopen) self.onopen();
@@ -22,7 +22,7 @@ if (!window.WebSocket) {
           console.error(e.toString());
         }
       });
-      
+
       self.__flash.addEventListener("close", function(fe) {
         try {
           if (self.onopen) self.onclose();
@@ -30,7 +30,7 @@ if (!window.WebSocket) {
           console.error(e.toString());
         }
       });
-      
+
       self.__flash.addEventListener("message", function(fe) {
         var data = fe.getData();
         try {
@@ -48,7 +48,7 @@ if (!window.WebSocket) {
           console.error(e.toString());
         }
       });
-      
+
       self.__flash.addEventListener("stateChange", function(fe) {
         try {
           self.readyState = fe.getReadyState();
@@ -57,11 +57,11 @@ if (!window.WebSocket) {
           console.error(e.toString());
         }
       });
-      
+
       //console.log("[WebSocket] Flash object is ready");
     });
   }
-  
+
   WebSocket.prototype.send = function(data) {
     if (!this.__flash || this.readyState == WebSocket.CONNECTING) {
       throw "INVALID_STATE_ERR: Web Socket connection has not been established";
@@ -86,14 +86,144 @@ if (!window.WebSocket) {
     if (this.onclose) this.onclose();
   };
 
-  WebSocket.prototype.addEventListener = function() {
-    throw "Not implemented. Use e.g. onopen etc. instead."
+  /**
+   * Implementation of {@link <a href="http://www.w3.org/TR/DOM-Level-2-Events/events.html#Events-registration">DOM 2 EventTarget Interface</a>}
+   *
+   * @param {string} type
+   * @param {function} listener
+   * @param {boolean} useCapture !NB Not implemented yet
+   * @return void
+   */
+  WebSocket.prototype.addEventListener = function(type, listener, useCapture) {
+    if (!('__events' in this)) {
+      this.__events = {};
+    }
+    if (!(type in this.__events)) {
+      this.__events[type] = [];
+      if ('function' == typeof this['on' + type]) {
+        this.__events[type].defaultHandler = this['on' + type];
+        this['on' + type] = WebSocket_FireEvent(this, type);
+      }
+    }
+    this.__events[type].push(listener);
   };
+
+  /**
+   * Implementation of {@link <a href="http://www.w3.org/TR/DOM-Level-2-Events/events.html#Events-registration">DOM 2 EventTarget Interface</a>}
+   *
+   * @param {string} type
+   * @param {function} listener
+   * @param {boolean} useCapture NB! Not implemented yet
+   * @return void
+   */
+  WebSocket.prototype.removeEventListener = function(type, listener, useCapture) {
+    if (!('__events' in this)) {
+      this.__events = {};
+    }
+    if (!(type in this.__events)) return;
+    for (var i = this.__events.length; i > -1; --i) {
+      if (listener === this.__events[type][i]) {
+        this.__events[type].splice(i, 1);
+        break;
+      }
+    }
+  };
+
+  /**
+   * Implementation of {@link <a href="http://www.w3.org/TR/DOM-Level-2-Events/events.html#Events-registration">DOM 2 EventTarget Interface</a>}
+   *
+   * @param {WebSocketEvent} event
+   * @return void
+   */
+  WebSocket.prototype.dispatchEvent = function(event) {
+    if (!('__events' in this)) throw 'UNSPECIFIED_EVENT_TYPE_ERR';
+    if (!(event.type in this.__events)) throw 'UNSPECIFIED_EVENT_TYPE_ERR';
+
+    for (var i = 0, l = this.__events[event.type].length; i < l; ++ i) {
+      this.__events[event.type][i](event);
+      if (event.cancelBubble) break;
+    }
+
+    if (false !== event.returnValue &&
+        'function' == typeof this.__events[event.type].defaultHandler)
+    {
+      this.__events[event.type].defaultHandler(event);
+    }
+  };
+
+  /**
+   *
+   * @param {object} object
+   * @param {string} type
+   */
+  function WebSocket_FireEvent(object, type) {
+    return function(data) {
+      var event = new WebSocketEvent();
+      event.initEvent(type, true, true);
+      event.target = event.currentTarget = object;
+      for (var key in data) {
+        event[key] = data[key];
+      }
+      object.dispatchEvent(event, arguments);
+    };
+  }
+
+  /**
+   * Basic implementation of {@link <a href="http://www.w3.org/TR/DOM-Level-2-Events/events.html#Events-interface">DOM 2 EventInterface</a>}
+   *
+   * @class
+   * @constructor
+   */
+  function WebSocketEvent(){}
+
+  /**
+   *
+   * @type boolean
+   */
+  WebSocketEvent.prototype.cancelable = true;
+
+  /**
+   *
+   * @type boolean
+   */
+  WebSocketEvent.prototype.cancelBubble = false;
+
+  /**
+   *
+   * @return void
+   */
+  WebSocketEvent.prototype.preventDefault = function() {
+    if (this.cancelable) {
+      this.returnValue = false;
+    }
+  };
+
+  /**
+   *
+   * @return void
+   */
+  WebSocketEvent.prototype.stopPropagation = function() {
+    this.cancelBubble = true;
+  };
+
+  /**
+   *
+   * @param {string} eventTypeArg
+   * @param {boolean} canBubbleArg
+   * @param {boolean} cancelableArg
+   * @return void
+   */
+  WebSocketEvent.prototype.initEvent = function(eventTypeArg, canBubbleArg, cancelableArg) {
+    this.type = eventTypeArg;
+    this.cancelable = cancelableArg;
+    this.timeStamp = new Date();
+  };
+
 
   WebSocket.CONNECTING = 0;
   WebSocket.OPEN = 1;
   WebSocket.CLOSED = 2;
-  
+
   WebSocket.__tasks = [];
 
   WebSocket.__initialize = function() {
@@ -133,7 +263,7 @@ if (!window.WebSocket) {
       }
     });
   };
-  
+
   WebSocket.__addTask = function(task) {
     if (WebSocket.__flash) {
       task();
@@ -157,5 +287,4 @@ if (!window.WebSocket) {
   } else {
     window.attachEvent("onload", WebSocket.__initialize);
   }
-  
 }
