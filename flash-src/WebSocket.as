@@ -193,7 +193,7 @@ public class WebSocket extends EventDispatcher {
           }
           var data:String = buffer.readUTFBytes(pos - 1);
           main.log("received: " + data);
-          dispatchEvent(new WebSocketMessageEvent("message", data));
+          dispatchEvent(new WebSocketMessageEvent("message", escape(data)));
           buffer.readByte();
           makeBufferCompact();
           pos = -1;
