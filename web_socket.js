@@ -32,7 +32,7 @@ if (!window.WebSocket) {
       });
 
       self.__flash.addEventListener("message", function(fe) {
-        var data = decodeURIComponentfe.getData());
+        var data = decodeURIComponent(fe.getData());
         try {
           if (self.onmessage) {
             var e;
@@ -274,12 +274,12 @@ if (!window.WebSocket) {
 
   // called from Flash
   function webSocketLog(message) {
-    console.log(decodeURIComponentmessage));
+    console.log(decodeURIComponent(message));
   }
 
   // called from Flash
   function webSocketError(message) {
-    console.error(decodeURIComponentmessage));
+    console.error(decodeURIComponent(message));
   }
 
   if (window.addEventListener) {
