@@ -70,11 +70,11 @@ public class WebSocketMain extends Sprite {
   }
 
   public function log(message:String):void {
-    ExternalInterface.call("webSocketLog", escape("[WebSocket] " + message));
+    ExternalInterface.call("webSocketLog", encodeURIComponent"[WebSocket] " + message));
   }
 
   public function fatal(message:String):void {
-    ExternalInterface.call("webSocketError", escape("[WebSocket] " + message));
+    ExternalInterface.call("webSocketError", encodeURIComponent"[WebSocket] " + message));
     throw message;
   }
 
