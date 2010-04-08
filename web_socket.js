@@ -25,7 +25,7 @@ if (!window.WebSocket) {
 
       self.__flash.addEventListener("close", function(fe) {
         try {
-          if (self.onopen) self.onclose();
+          if (self.onclose) self.onclose();
         } catch (e) {
           console.error(e.toString());
         }
