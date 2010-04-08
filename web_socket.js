@@ -3,9 +3,29 @@
 // Reference: http://dev.w3.org/html5/websockets/
 // Reference: http://tools.ietf.org/html/draft-hixie-thewebsocketprotocol
 
-if (!window.WebSocket) {
+(function() {
+  
+  if (window.WebSocket) return;
 
-  if (!window.console) console = {log: function(){ }, error: function(){ }};
+  var console = window.console;
+  if (!console) console = {log: function(){ }, error: function(){ }};
+
+  function hasFlash() {
+    if ('navigator' in window && 'plugins' in navigator && navigator.plugins['Shockwave Flash']) {
+      return !!navigator.plugins['Shockwave Flash'].description;
+    }
+    if ('ActiveXObject' in window) {
+      try {
+        return !!new ActiveXObject('ShockwaveFlash.ShockwaveFlash').GetVariable('$version');
+      } catch (e) {}
+    }
+    return false;
+  }
+  
+  if (!hasFlash()) {
+    console.error("Flash Player is not installed.");
+    return;
+  }
 
   WebSocket = function(url, protocol, proxyHost, proxyPort, headers) {
     var self = this;
@@ -287,4 +307,5 @@ if (!window.WebSocket) {
   } else {
     window.attachEvent("onload", WebSocket.__initialize);
   }
-}
+  
+})();
