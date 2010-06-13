@@ -16,6 +16,7 @@ import mx.controls.*;
 import mx.events.*;
 import mx.utils.*;
 import com.adobe.net.proxies.RFC2817Socket;
+import com.gsolo.encryption.MD5;
 
 [Event(name="message", type="WebSocketMessageEvent")]
 [Event(name="open", type="flash.events.Event")]
@@ -40,12 +41,15 @@ public class WebSocket extends EventDispatcher {
   private var readyState:int = CONNECTING;
   private var bufferedAmount:int = 0;
   private var headers:String;
+  private var noiseChars:Array;
+  private var expectedDigest:String;
 
   public function WebSocket(
       main:WebSocketMain, url:String, protocol:String,
       proxyHost:String = null, proxyPort:int = 0,
       headers:String = null) {
     this.main = main;
+    initNoiseChars();
     var m:Array = url.match(/^(\w+):\/\/([^\/:]+)(:(\d+))?(\/.*)?$/);
     if (!m) main.fatal("invalid url: " + url);
     this.scheme = m[1];
@@ -123,6 +127,10 @@ public class WebSocket extends EventDispatcher {
     if (main.getCallerHost() == host) {
       cookie = ExternalInterface.call("function(){return document.cookie}");
     }
+    var key1:String = generateKey();
+    var key2:String = generateKey();
+    var key3:String = generateKey3();
+    expectedDigest = getSecurityDigest(key1, key2, key3);
     var opt:String = "";
     if (protocol) opt += "WebSocket-Protocol: " + protocol + "\r\n";
     // if caller passes additional headers they must end with "\r\n"
@@ -134,12 +142,16 @@ public class WebSocket extends EventDispatcher {
       "Connection: Upgrade\r\n" +
       "Host: {1}\r\n" +
       "Origin: {2}\r\n" +
-      "Cookie: {4}\r\n" +
-      "{3}" +
+      "Cookie: {3}\r\n" +
+      "Sec-WebSocket-Key1: {4}\r\n" +
+      "Sec-WebSocket-Key2: {5}\r\n" +
+      "{6}" +
       "\r\n",
-      path, hostValue, origin, opt, cookie);
+      path, hostValue, origin, cookie, key1, key2, opt);
     main.log("request header:\n" + req);
     socket.writeUTFBytes(req);
+    main.log("sent key3: " + key3);
+    writeBytes(key3);
     socket.flush();
   }
 
@@ -166,7 +178,7 @@ public class WebSocket extends EventDispatcher {
     var pos:int = buffer.length;
     socket.readBytes(buffer, pos);
     for (; pos < buffer.length; ++pos) {
-      if (headerState != 4) {
+      if (headerState < 4) {
         // try to find "\r\n\r\n"
         if ((headerState == 0 || headerState == 2) && buffer[pos] == 0x0d) {
           ++headerState;
@@ -179,6 +191,17 @@ public class WebSocket extends EventDispatcher {
           var headerStr:String = buffer.readUTFBytes(pos + 1);
           main.log("response header:\n" + headerStr);
           validateHeader(headerStr);
+          makeBufferCompact();
+          pos = -1;
+        }
+      } else if (headerState == 4) {
+        if (pos == 15) {
+          var replyDigest:String = readBytes(buffer, 16);
+          main.log("reply digest: " + replyDigest);
+          if (replyDigest != expectedDigest) {
+            main.fatal("digest doesn't match: " + replyDigest + " != " + expectedDigest);
+          }
+          headerState = 5;
           makeBufferCompact();
           pos = -1;
           readyState = OPEN;
@@ -226,12 +249,12 @@ public class WebSocket extends EventDispatcher {
       close();
       main.fatal("invalid Connection: " + header["Connection"]);
     }
-    var resOrigin:String = header["WebSocket-Origin"].toLowerCase();
+    var resOrigin:String = header["Sec-WebSocket-Origin"].toLowerCase();
     if (resOrigin != origin) {
       close();
       main.fatal("origin doesn't match: '" + resOrigin + "' != '" + origin + "'");
     }
-    if (protocol && header["WebSocket-Protocol"] != protocol) {
+    if (protocol && header["Sec-WebSocket-Protocol"] != protocol) {
       close();
       main.fatal("protocol doesn't match: '" +
         header["WebSocket-Protocol"] + "' != '" + protocol + "'");
@@ -248,7 +271,92 @@ public class WebSocket extends EventDispatcher {
   private function notifyStateChange():void {
     dispatchEvent(new WebSocketStateEvent("stateChange", readyState, bufferedAmount));
   }
+  
+  private function initNoiseChars():void {
+    noiseChars = new Array();
+    for (var i:int = 0x21; i <= 0x2f; ++i) {
+      noiseChars.push(String.fromCharCode(i));
+    }
+    for (var j:int = 0x3a; j <= 0x7a; ++j) {
+      noiseChars.push(String.fromCharCode(j));
+    }
+  }
+  
+  private function generateKey():String {
+    var spaces:uint = randomInt(1, 12);
+    var max:uint = uint.MAX_VALUE / spaces;
+    var number:uint = randomInt(0, max);
+    var key:String = (number * spaces).toString();
+    var noises:int = randomInt(1, 12);
+    var pos:int;
+    for (var i:int = 0; i < noises; ++i) {
+      var char:String = noiseChars[randomInt(0, noiseChars.length - 1)];
+      pos = randomInt(0, key.length);
+      key = key.substr(0, pos) + char + key.substr(pos);
+    }
+    for (var j:int = 0; j < spaces; ++j) {
+      pos = randomInt(1, key.length - 1);
+      key = key.substr(0, pos) + " " + key.substr(pos);
+    }
+    return key;
+  }
+  
+  private function generateKey3():String {
+    var key3:String = "";
+    for (var i:int = 0; i < 8; ++i) {
+      key3 += String.fromCharCode(randomInt(0, 255));
+    }
+    return key3;
+  }
+  
+  private function getSecurityDigest(key1:String, key2:String, key3:String):String {
+    var bytes1:String = keyToBytes(key1);
+    var bytes2:String = keyToBytes(key2);
+    return MD5.rstr_md5(bytes1 + bytes2 + key3);
+  }
+  
+  private function keyToBytes(key:String):String {
+    var keyNum:uint = parseInt(key.replace(/[^\d]/g, ""));
+    var spaces:uint = 0;
+    for (var i:int = 0; i < key.length; ++i) {
+      if (key.charAt(i) == " ") ++spaces;
+    }
+    var resultNum:uint = keyNum / spaces;
+    var bytes:String = "";
+    for (var j:int = 3; j >= 0; --j) {
+      bytes += String.fromCharCode((resultNum >> (j * 8)) & 0xff);
+    }
+    return bytes;
+  }
+  
+  private function writeBytes(bytes:String):void {
+    for (var i:int = 0; i < bytes.length; ++i) {
+      socket.writeByte(bytes.charCodeAt(i));
+    }
+  }
+  
+  private function readBytes(buffer:ByteArray, numBytes:int):String {
+    var bytes:String = "";
+    for (var i:int = 0; i < numBytes; ++i) {
+      // & 0xff is to make \x80-\xff positive number.
+      bytes += String.fromCharCode(buffer.readByte() & 0xff);
+    }
+    return bytes;
+  }
+  
+  private function randomInt(min:uint, max:uint):uint {
+    return min + Math.floor(Math.random() * (Number(max) - min + 1));
+  }
 
+  // for debug
+  private function dumpBytes(bytes:String):void {
+    var output:String = "";
+    for (var i:int = 0; i < bytes.length; ++i) {
+      output += bytes.charCodeAt(i).toString() + ", ";
+    }
+    main.log(output);
+  }
+  
 }
 
 }

@@ -293,14 +293,14 @@
   }
 
   // called from Flash
-  function webSocketLog(message) {
+  window.webSocketLog = function(message) {
     console.log(decodeURIComponent(message));
-  }
+  };
 
   // called from Flash
-  function webSocketError(message) {
+  window.webSocketError = function(message) {
     console.error(decodeURIComponent(message));
-  }
+  };
 
   if (window.addEventListener) {
     window.addEventListener("load", WebSocket.__initialize, false);
