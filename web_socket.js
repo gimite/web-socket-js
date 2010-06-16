@@ -69,6 +69,14 @@
         }
       });
 
+      self.__flash.addEventListener("error", function(fe) {
+        try {
+          if (self.onerror) self.onerror();
+        } catch (e) {
+          console.error(e.toString());
+        }
+      });
+
       self.__flash.addEventListener("stateChange", function(fe) {
         try {
           self.readyState = fe.getReadyState();
@@ -242,7 +250,8 @@
 
   WebSocket.CONNECTING = 0;
   WebSocket.OPEN = 1;
-  WebSocket.CLOSED = 2;
+  WebSocket.CLOSING = 2;
+  WebSocket.CLOSED = 3;
 
   WebSocket.__tasks = [];
 

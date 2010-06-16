@@ -21,15 +21,18 @@ import com.gsolo.encryption.MD5;
 [Event(name="message", type="WebSocketMessageEvent")]
 [Event(name="open", type="flash.events.Event")]
 [Event(name="close", type="flash.events.Event")]
+[Event(name="error", type="flash.events.Event")]
 [Event(name="stateChange", type="WebSocketStateEvent")]
 public class WebSocket extends EventDispatcher {
   
   private static var CONNECTING:int = 0;
   private static var OPEN:int = 1;
-  private static var CLOSED:int = 2;
+  private static var CLOSING:int = 2;
+  private static var CLOSED:int = 3;
   
   private var socket:RFC2817Socket;
   private var main:WebSocketMain;
+  private var url:String;
   private var scheme:String;
   private var host:String;
   private var port:uint;
@@ -50,8 +53,9 @@ public class WebSocket extends EventDispatcher {
       headers:String = null) {
     this.main = main;
     initNoiseChars();
+    this.url = url;
     var m:Array = url.match(/^(\w+):\/\/([^\/:]+)(:(\d+))?(\/.*)?$/);
-    if (!m) main.fatal("invalid url: " + url);
+    if (!m) main.fatal("SYNTAX_ERR: invalid url: " + url);
     this.scheme = m[1];
     this.host = m[2];
     this.port = parseInt(m[4] || "80");
@@ -96,7 +100,7 @@ public class WebSocket extends EventDispatcher {
       // > You are trying to call recursively into the Flash Player which is not allowed.
       return bufferedAmount;
     } else {
-      main.fatal("invalid state");
+      main.fatal("INVALID_STATE_ERR: invalid state");
       return 0;
     }
   }
@@ -163,15 +167,34 @@ public class WebSocket extends EventDispatcher {
   }
 
   private function onSocketIoError(event:IOErrorEvent):void {
-    close();
-    main.fatal("failed to connect Web Socket server (IoError)");
+    var message:String;
+    if (readyState == CONNECTING) {
+      message = "cannot connect to Web Socket server at " + url + " (IoError)";
+    } else {
+      message = "error communicating with Web Socket server at " + url + " (IoError)";
+    }
+    onError(message);
   }
 
   private function onSocketSecurityError(event:SecurityErrorEvent):void {
+    var message:String;
+    if (readyState == CONNECTING) {
+      message =
+          "cannot connect to Web Socket server at " + url + " (SecurityError)\n" +
+          "make sure the server is running and Flash socket policy file is correctly placed";
+    } else {
+      message = "error communicating with Web Socket server at " + url + " (SecurityError)";
+    }
+    onError(message);
+  }
+  
+  private function onError(message:String):void {
+    var state:int = readyState;
+    if (state == CLOSED) return;
+    main.error(message);
     close();
-    main.fatal(
-      "failed to connect Web Socket server (SecurityError)\n" +
-      "make sure the server is running and Flash socket policy file is correctly placed");
+    notifyStateChange();
+    dispatchEvent(new Event(state == CONNECTING ? "close" : "error"));
   }
 
   private function onSocketData(event:ProgressEvent):void {
@@ -190,7 +213,7 @@ public class WebSocket extends EventDispatcher {
         if (headerState == 4) {
           var headerStr:String = buffer.readUTFBytes(pos + 1);
           main.log("response header:\n" + headerStr);
-          validateHeader(headerStr);
+          if (!validateHeader(headerStr)) return;
           makeBufferCompact();
           pos = -1;
         }
@@ -199,7 +222,8 @@ public class WebSocket extends EventDispatcher {
           var replyDigest:String = readBytes(buffer, 16);
           main.log("reply digest: " + replyDigest);
           if (replyDigest != expectedDigest) {
-            main.fatal("digest doesn't match: " + replyDigest + " != " + expectedDigest);
+            onError("digest doesn't match: " + replyDigest + " != " + expectedDigest);
+            return;
           }
           headerState = 5;
           makeBufferCompact();
@@ -211,8 +235,8 @@ public class WebSocket extends EventDispatcher {
       } else {
         if (buffer[pos] == 0xff) {
           if (buffer.readByte() != 0x00) {
-            close();
-            main.fatal("data must start with \\x00");
+            onError("data must start with \\x00");
+            return;
           }
           var data:String = buffer.readUTFBytes(pos - 1);
           main.log("received: " + data);
@@ -225,40 +249,41 @@ public class WebSocket extends EventDispatcher {
     }
   }
   
-  private function validateHeader(headerStr:String):void {
+  private function validateHeader(headerStr:String):Boolean {
     var lines:Array = headerStr.split(/\r\n/);
     if (!lines[0].match(/^HTTP\/1.1 101 /)) {
-      close();
-      main.fatal("bad response: " + lines[0]);
+      onError("bad response: " + lines[0]);
+      return false;
     }
     var header:Object = {};
     for (var i:int = 1; i < lines.length; ++i) {
       if (lines[i].length == 0) continue;
       var m:Array = lines[i].match(/^(\S+): (.*)$/);
       if (!m) {
-        close();
-        main.fatal("failed to parse response header line: " + lines[i]);
+        onError("failed to parse response header line: " + lines[i]);
+        return false;
       }
       header[m[1]] = m[2];
     }
     if (header["Upgrade"] != "WebSocket") {
-      close();
-      main.fatal("invalid Upgrade: " + header["Upgrade"]);
+      onError("invalid Upgrade: " + header["Upgrade"]);
+      return false;
     }
     if (header["Connection"] != "Upgrade") {
-      close();
-      main.fatal("invalid Connection: " + header["Connection"]);
+      onError("invalid Connection: " + header["Connection"]);
+      return false;
     }
     var resOrigin:String = header["Sec-WebSocket-Origin"].toLowerCase();
     if (resOrigin != origin) {
-      close();
-      main.fatal("origin doesn't match: '" + resOrigin + "' != '" + origin + "'");
+      onError("origin doesn't match: '" + resOrigin + "' != '" + origin + "'");
+      return false;
     }
     if (protocol && header["Sec-WebSocket-Protocol"] != protocol) {
-      close();
-      main.fatal("protocol doesn't match: '" +
+      onError("protocol doesn't match: '" +
         header["WebSocket-Protocol"] + "' != '" + protocol + "'");
+      return false;
     }
+    return true;
   }
 
   private function makeBufferCompact():void {
