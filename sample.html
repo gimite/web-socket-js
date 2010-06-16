@@ -35,6 +35,9 @@
       ws.onclose = function() {
         output("onclose");
       };
+      ws.onerror = function() {
+        output("onerror");
+      };
 
     }
     
