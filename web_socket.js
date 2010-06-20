@@ -58,7 +58,7 @@
             var e;
             if (window.MessageEvent) {
               e = document.createEvent("MessageEvent");
-              e.initMessageEvent("message", false, false, data, null, null, window);
+              e.initMessageEvent("message", false, false, data, null, null, window, null);
             } else { // IE
               e = {data: data};
             }
