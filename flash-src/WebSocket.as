@@ -131,6 +131,9 @@ public class WebSocket extends EventDispatcher {
   public function close():void {
     main.log("close");
     try {
+      socket.writeByte(0xff);
+      socket.writeByte(0x00);
+      socket.flush();
       socket.close();
     } catch (ex:Error) { }
     readyState = CLOSED;
@@ -243,7 +246,7 @@ public class WebSocket extends EventDispatcher {
           var headerStr:String = buffer.readUTFBytes(pos + 1);
           main.log("response header:\n" + headerStr);
           if (!validateHeader(headerStr)) return;
-          makeBufferCompact();
+          removeBufferBefore(pos + 1);
           pos = -1;
         }
       } else if (headerState == 4) {
@@ -255,14 +258,14 @@ public class WebSocket extends EventDispatcher {
             return;
           }
           headerState = 5;
-          makeBufferCompact();
+          removeBufferBefore(pos + 1);
           pos = -1;
           readyState = OPEN;
           notifyStateChange();
           dispatchEvent(new Event("open"));
         }
       } else {
-        if (buffer[pos] == 0xff) {
+        if (buffer[pos] == 0xff && pos > 0) {
           if (buffer.readByte() != 0x00) {
             onError("data must start with \\x00");
             return;
@@ -271,8 +274,15 @@ public class WebSocket extends EventDispatcher {
           main.log("received: " + data);
           dispatchEvent(new WebSocketMessageEvent("message", encodeURIComponent(data)));
           buffer.readByte();
-          makeBufferCompact();
+          removeBufferBefore(pos + 1);
           pos = -1;
+        } else if (pos == 1 && buffer[0] == 0xff && buffer[1] == 0x00) { // closing
+          main.log("received closing packet");
+          removeBufferBefore(pos + 1);
+          pos = -1;
+          close();
+          notifyStateChange();
+          dispatchEvent(new Event("close"));
         }
       }
     }
@@ -315,9 +325,10 @@ public class WebSocket extends EventDispatcher {
     return true;
   }
 
-  private function makeBufferCompact():void {
-    if (buffer.position == 0) return;
+  private function removeBufferBefore(pos:int):void {
+    if (pos == 0) return;
     var nextBuffer:ByteArray = new ByteArray();
+    buffer.position = pos;
     buffer.readBytes(nextBuffer);
     buffer = nextBuffer;
   }
