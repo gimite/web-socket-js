@@ -1,7 +1,7 @@
 // Copyright: Hiroshi Ichikawa <http://gimite.net/en/>
 // License: New BSD License
 // Reference: http://dev.w3.org/html5/websockets/
-// Reference: http://tools.ietf.org/html/draft-hixie-thewebsocketprotocol-31
+// Reference: http://tools.ietf.org/html/draft-hixie-thewebsocketprotocol-76
 
 package {
 
@@ -34,7 +34,6 @@ public class WebSocket extends EventDispatcher {
   private static var CLOSING:int = 2;
   private static var CLOSED:int = 3;
   
-  //private var rawSocket:RFC2817Socket;
   private var rawSocket:Socket;
   private var tlsSocket:TLSSocket;
   private var tlsConfig:TLSConfig;
@@ -75,51 +74,49 @@ public class WebSocket extends EventDispatcher {
     // "Header1: xxx\r\nHeader2: yyyy\r\n"
     this.headers = headers;
     
-    /*
-    socket = new RFC2817Socket();
-            
-    // if no proxy information is supplied, it acts like a normal Socket
-    // @see RFC2817Socket::connect
-    if (proxyHost != null && proxyPort != 0){      
-      socket.setProxyInfo(proxyHost, proxyPort);
-    } 
-    */
-
-    ExternalInterface.call("console.log", "[WebSocket] scheme: " + scheme);
-    rawSocket = new Socket();
-
-    rawSocket.addEventListener(Event.CLOSE, onSocketClose);
-    rawSocket.addEventListener(Event.CONNECT, onSocketConnect);
-    rawSocket.addEventListener(IOErrorEvent.IO_ERROR, onSocketIoError);
-    rawSocket.addEventListener(SecurityErrorEvent.SECURITY_ERROR, onSocketSecurityError);
-    if (scheme == "wss") {
+    if (proxyHost != null && proxyPort != 0){
+      if (scheme == "wss") {
+        main.fatal("wss with proxy is not supported");
+      }
+      var proxySocket:RFC2817Socket = new RFC2817Socket();
+      proxySocket.setProxyInfo(proxyHost, proxyPort);
+      proxySocket.addEventListener(ProgressEvent.SOCKET_DATA, onSocketData);
+      rawSocket = socket = proxySocket;
+    } else {
+      rawSocket = new Socket();
+      if (scheme == "wss") {
         tlsConfig= new TLSConfig(TLSEngine.CLIENT,
             null, null, null, null, null,
             TLSSecurityParameters.PROTOCOL_VERSION);
         tlsConfig.trustSelfSignedCertificates = true;
         tlsConfig.ignoreCommonNameMismatch = true;
-
         tlsSocket = new TLSSocket();
         tlsSocket.addEventListener(ProgressEvent.SOCKET_DATA, onSocketData);
-        socket = (tlsSocket as Socket);
-    } else {
+        socket = tlsSocket;
+      } else {
         rawSocket.addEventListener(ProgressEvent.SOCKET_DATA, onSocketData);
-        socket = (rawSocket as Socket);
+        socket = rawSocket;
+      }
     }
+    rawSocket.addEventListener(Event.CLOSE, onSocketClose);
+    rawSocket.addEventListener(Event.CONNECT, onSocketConnect);
+    rawSocket.addEventListener(IOErrorEvent.IO_ERROR, onSocketIoError);
+    rawSocket.addEventListener(SecurityErrorEvent.SECURITY_ERROR, onSocketSecurityError);
     rawSocket.connect(host, port);
   }
   
-  public function send(data:String):int {
+  public function send(encData:String):int {
+    var data:String = decodeURIComponent(encData);
     if (readyState == OPEN) {
       socket.writeByte(0x00);
-      socket.writeUTFBytes(decodeURIComponent(data));
+      socket.writeUTFBytes(data);
       socket.writeByte(0xff);
       socket.flush();
       main.log("sent: " + data);
       return -1;
     } else if (readyState == CLOSED) {
       var bytes:ByteArray = new ByteArray();
-      bytes.writeUTFBytes(decodeURIComponent(data));
+      bytes.writeUTFBytes(data);
       bufferedAmount += bytes.length; // not sure whether it should include \x00 and \xff
       // We use return value to let caller know bufferedAmount because we cannot fire
       // stateChange event here which causes weird error:
@@ -154,8 +151,8 @@ public class WebSocket extends EventDispatcher {
     main.log("connected");
 
     if (scheme == "wss") {
-        ExternalInterface.call("console.log", "[WebSocket] starting SSL/TLS");
-        tlsSocket.startTLS(rawSocket, host, tlsConfig);
+      main.log("starting SSL/TLS");
+      tlsSocket.startTLS(rawSocket, host, tlsConfig);
     }
     
     var hostValue:String = host + (port == 80 ? "" : ":" + port);
