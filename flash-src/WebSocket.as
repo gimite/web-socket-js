@@ -243,6 +243,7 @@ public class WebSocket extends EventDispatcher {
           headerState = 0;
         }
         if (headerState == 4) {
+          buffer.position = 0;
           var headerStr:String = buffer.readUTFBytes(pos + 1);
           main.log("response header:\n" + headerStr);
           if (!validateHeader(headerStr)) return;
@@ -251,6 +252,7 @@ public class WebSocket extends EventDispatcher {
         }
       } else if (headerState == 4) {
         if (pos == 15) {
+          buffer.position = 0;
           var replyDigest:String = readBytes(buffer, 16);
           main.log("reply digest: " + replyDigest);
           if (replyDigest != expectedDigest) {
@@ -266,14 +268,14 @@ public class WebSocket extends EventDispatcher {
         }
       } else {
         if (buffer[pos] == 0xff && pos > 0) {
-          if (buffer.readByte() != 0x00) {
+          if (buffer[0] != 0x00) {
             onError("data must start with \\x00");
             return;
           }
+          buffer.position = 1;
           var data:String = buffer.readUTFBytes(pos - 1);
           main.log("received: " + data);
           dispatchEvent(new WebSocketMessageEvent("message", encodeURIComponent(data)));
-          buffer.readByte();
           removeBufferBefore(pos + 1);
           pos = -1;
         } else if (pos == 1 && buffer[0] == 0xff && buffer[1] == 0x00) { // closing
@@ -406,12 +408,16 @@ public class WebSocket extends EventDispatcher {
     return bytes;
   }
   
+  // Writes byte sequence to socket.
+  // bytes is String in special format where bytes[i] is i-th byte, not i-th character.
   private function writeBytes(bytes:String):void {
     for (var i:int = 0; i < bytes.length; ++i) {
       socket.writeByte(bytes.charCodeAt(i));
     }
   }
   
+  // Reads specified number of bytes from buffer, and returns it as special format String
+  // where bytes[i] is i-th byte (not i-th character).
   private function readBytes(buffer:ByteArray, numBytes:int):String {
     var bytes:String = "";
     for (var i:int = 0; i < numBytes; ++i) {
