@@ -312,6 +312,18 @@ public class WebSocket extends EventDispatcher {
       onError("invalid Connection: " + header["Connection"]);
       return false;
     }
+    if (!header["Sec-WebSocket-Origin"]) {
+      if (header["WebSocket-Origin"]) {
+        onError(
+          "The WebSocket server speaks old WebSocket protocol, " +
+          "which is not supported by web-socket-js. " +
+          "It requires WebSocket protocol 76 or later. " +
+          "Try newer version of the server if available.");
+      } else {
+        onError("header Sec-WebSocket-Origin is missing");
+      }
+      return false;
+    }
     var resOrigin:String = header["Sec-WebSocket-Origin"].toLowerCase();
     if (resOrigin != origin) {
       onError("origin doesn't match: '" + resOrigin + "' != '" + origin + "'");
