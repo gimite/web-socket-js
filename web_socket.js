@@ -35,15 +35,60 @@
       self.__flash =
         WebSocket.__flash.create(url, protocol, proxyHost || null, proxyPort || 0, headers || null);
 
+      self.__messageHandler = function() {
+        var i, arr, data;
+        arr = self.__flash.readSocketData();
+        for (i=0; i < arr.length; i++) {
+          data = decodeURIComponent(arr[i]);
+          try {
+            if (self.onmessage) {
+              var e;
+              if (window.MessageEvent) {
+                e = document.createEvent("MessageEvent");
+                e.initMessageEvent("message", false, false, data, null, null, window, null);
+              } else { // IE
+                e = {data: data};
+              }
+              self.onmessage(e);
+            }
+          } catch (e) {
+            console.error(e.toString());
+          }
+        }
+      };
+
       self.__flash.addEventListener("open", function(fe) {
+        self.readyState = self.__flash.getReadyState();
+
+        // For browsers (like Opera) that drop events, also poll for
+        // message data
+        if (self.__messageHandlerID) {
+          clearInterval(self.__messageHandlerID);
+        }
+        self.__messageHandlerID = setInterval(function () {
+            //console.log("polling for message data");
+            self.__messageHandler; }, 500);
+
         try {
-          if (self.onopen) self.onopen();
+          if (self.onopen) {
+            self.onopen();
+          } else {
+            // If "open" comes back in the same thread, then the
+            // caller will not have set the onopen handler yet.
+            setTimeout(function () {
+                if (self.onopen) { self.onopen(); } }, 10);
+          }
         } catch (e) {
           console.error(e.toString());
         }
       });
 
       self.__flash.addEventListener("close", function(fe) {
+        self.readyState = self.__flash.getReadyState();
+
+        if (self.__messageHandlerID) {
+          clearInterval(self.__messageHandlerID);
+        }
         try {
           if (self.onclose) self.onclose();
         } catch (e) {
@@ -51,25 +96,12 @@
         }
       });
 
-      self.__flash.addEventListener("message", function(fe) {
-        var data = decodeURIComponent(fe.getData());
-        try {
-          if (self.onmessage) {
-            var e;
-            if (window.MessageEvent) {
-              e = document.createEvent("MessageEvent");
-              e.initMessageEvent("message", false, false, data, null, null, window, null);
-            } else { // IE
-              e = {data: data};
-            }
-            self.onmessage(e);
-          }
-        } catch (e) {
-          console.error(e.toString());
-        }
-      });
+      self.__flash.addEventListener("message", self.__messageHandler);
 
       self.__flash.addEventListener("error", function(fe) {
+        if (self.__messageHandlerID) {
+          clearInterval(self.__messageHandlerID);
+        }
         try {
           if (self.onerror) self.onerror();
         } catch (e) {
@@ -91,6 +123,7 @@
   }
 
   WebSocket.prototype.send = function(data) {
+    this.readyState = this.__flash.getReadyState();
     if (!this.__flash || this.readyState == WebSocket.CONNECTING) {
       throw "INVALID_STATE_ERR: Web Socket connection has not been established";
     }
@@ -105,12 +138,16 @@
 
   WebSocket.prototype.close = function() {
     if (!this.__flash) return;
+    this.readyState = this.__flash.getReadyState();
     if (this.readyState != WebSocket.OPEN) return;
     this.__flash.close();
     // Sets/calls them manually here because Flash WebSocketConnection.close cannot fire events
     // which causes weird error:
     // > You are trying to call recursively into the Flash Player which is not allowed.
     this.readyState = WebSocket.CLOSED;
+    if (this.__messageHandlerID) {
+      clearInterval(this.__messageHandlerID);
+    }
     if (this.onclose) this.onclose();
   };
 
@@ -256,6 +293,9 @@
   WebSocket.__tasks = [];
 
   WebSocket.__initialize = function() {
+    if (WebSocket__swfLocation) {
+        WebSocket.__swfLocation = WebSocket__swfLocation;
+    }
     if (!WebSocket.__swfLocation) {
       console.error("[WebSocket] set WebSocket.__swfLocation to location of WebSocketMain.swf");
       return;

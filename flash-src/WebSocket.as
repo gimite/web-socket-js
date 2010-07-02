@@ -47,6 +47,7 @@ public class WebSocket extends EventDispatcher {
   private var origin:String;
   private var protocol:String;
   private var buffer:ByteArray = new ByteArray();
+  private var dataQueue:Array;
   private var headerState:int = 0;
   private var readyState:int = CONNECTING;
   private var bufferedAmount:int = 0;
@@ -130,6 +131,7 @@ public class WebSocket extends EventDispatcher {
   
   public function close():void {
     main.log("close");
+    dataQueue = [];
     try {
       socket.writeByte(0xff);
       socket.writeByte(0x00);
@@ -158,6 +160,7 @@ public class WebSocket extends EventDispatcher {
       tlsSocket.startTLS(rawSocket, host, tlsConfig);
     }
     
+    dataQueue = [];
     var hostValue:String = host + (port == 80 ? "" : ":" + port);
     var cookie:String = "";
     if (main.getCallerHost() == host) {
@@ -275,7 +278,8 @@ public class WebSocket extends EventDispatcher {
           buffer.position = 1;
           var data:String = buffer.readUTFBytes(pos - 1);
           main.log("received: " + data);
-          dispatchEvent(new WebSocketMessageEvent("message", encodeURIComponent(data)));
+          dataQueue.push(encodeURIComponent(data));
+          dispatchEvent(new WebSocketMessageEvent("message", data.length.toString()));
           removeBufferBefore(pos + 1);
           pos = -1;
         } else if (pos == 1 && buffer[0] == 0xff && buffer[1] == 0x00) { // closing
@@ -288,6 +292,15 @@ public class WebSocket extends EventDispatcher {
         }
       }
     }
+  }
+
+  public function readSocketData():Array {
+    var q:Array = dataQueue;
+    if (dataQueue.length > 0) {
+        // Reset to empty
+        dataQueue = [];
+    }
+    return q;
   }
   
   private function validateHeader(headerStr:String):Boolean {
