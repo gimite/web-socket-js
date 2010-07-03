@@ -46,17 +46,15 @@
       WebSocket.__flash.create(url, protocol, proxyHost || null, proxyPort || 0, headers || null);
 
     self.__flash.addEventListener("open", function(fe) {
-      self.readyState = self.__flash.getReadyState();
-
-      if (self.__timer) clearInterval(self.__timer);
-      if (window.opera) {
-        // Workaround for weird behavior of Opera which sometimes drops events.
-        self.__timer = setInterval(function () {
-          self.__handleMessages();
-        }, 500);
-      }
-
       try {
+        self.readyState = self.__flash.getReadyState();
+        if (self.__timer) clearInterval(self.__timer);
+        if (window.opera) {
+          // Workaround for weird behavior of Opera which sometimes drops events.
+          self.__timer = setInterval(function () {
+            self.__handleMessages();
+          }, 500);
+        }
         if (self.onopen) self.onopen();
       } catch (e) {
         console.error(e.toString());
@@ -64,10 +62,9 @@
     });
 
     self.__flash.addEventListener("close", function(fe) {
-      self.readyState = self.__flash.getReadyState();
-
-      if (self.__timer) clearInterval(self.__timer);
       try {
+        self.readyState = self.__flash.getReadyState();
+        if (self.__timer) clearInterval(self.__timer);
         if (self.onclose) self.onclose();
       } catch (e) {
         console.error(e.toString());
@@ -83,8 +80,8 @@
     });
 
     self.__flash.addEventListener("error", function(fe) {
-      if (self.__timer) clearInterval(self.__timer);
       try {
+        if (self.__timer) clearInterval(self.__timer);
         if (self.onerror) self.onerror();
       } catch (e) {
         console.error(e.toString());
@@ -93,7 +90,7 @@
 
     self.__flash.addEventListener("stateChange", function(fe) {
       try {
-        self.readyState = fe.getReadyState();
+        self.readyState = self.__flash.getReadyState();
         self.bufferedAmount = fe.getBufferedAmount();
       } catch (e) {
         console.error(e.toString());
@@ -104,7 +101,9 @@
   };
 
   WebSocket.prototype.send = function(data) {
-    this.readyState = this.__flash.getReadyState();
+    if (this.__flash) {
+      this.readyState = this.__flash.getReadyState();
+    }
     if (!this.__flash || this.readyState == WebSocket.CONNECTING) {
       throw "INVALID_STATE_ERR: Web Socket connection has not been established";
     }
