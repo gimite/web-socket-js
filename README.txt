@@ -26,12 +26,13 @@ If sample.html doesn't work, check these:
 http://www.adobe.com/support/flashplayer/downloads.html
 
 
-* Supported environment
+* Supported environments
 
-I confirmed it works on Chrome 3, Firefox 3.5 and IE 8. It may not work in other browsers.
-It requires Flash Player 9 or later (probably).
+It should work on:
+- Google Chrome 4 or later (just uses native implementation)
+- Firefox 3.x, Internet Explorer 8 + Flash Player 9 or later
 
-On Chrome 4 Dev Channel, it just uses native Web Socket implementation.
+It may or may not work on other browsers such as Safari, Opera or IE 6. Patch for these browsers are appreciated, but I will not work on fixing issues specific to these browsers by myself.
 
 
 * Flash socket policy file
