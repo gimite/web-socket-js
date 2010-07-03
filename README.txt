@@ -15,14 +15,29 @@ Assuming you have Web server (e.g. Apache) running at http://example.com/ .
 #1: First argument of echo_server.rb means that it accepts Web Socket connection from HTML pages in example.com.
 
 
-* How to debug
+* Troubleshooting
 
-If sample.html doesn't work, check these:
+If it doesn't work, try these:
 
-- It doesn't work when you open sample.html as local file i.e. file:///.../sample.html. Open it via Web server.
-- Make sure port 10081 is not blocked by your server/client's firewall.
-- Use Developer Tools (Chrome/Safari) or Firebug (Firefox) to see if console.log outputs any errors.
-- Install debugger version of Flash Player available here to see Flash errors:
+1. Try Chrome and Firefox 3.x.
+- It doesn't work on Chrome:
+-- It's likely an issue of your code or the server. Debug your code as usual e.g. using console.log.
+- It works on Chrome but it doesn't work on Firefox:
+-- It's likely an issue of web-socket-js specific configuration (e.g. 3 and 4 below).
+- It works on both Chrome and Firefox, but it doesn't work on your browser:
+-- Check "Supported environment" section below. Your browser may not be supported by web-socket-js.
+
+2. Use Developer Tools (Chrome/Safari) or Firebug (Firefox) to see if console.log outputs any errors.
+
+3. Make sure you do NOT open your HTML page as local file e.g. file:///.../sample.html. web-socket-js doesn't work on local file. Open it via Web server e.g. http:///.../sample.html.
+
+4. If you are NOT using web-socket-ruby as your WebSocket server, you need to place Flash socket policy file on your server. See "Flash socket policy file" section below for details.
+
+5. Check if sample.html bundled with web-socket-js works.
+
+6. Make sure the port used for WebSocket (10081 in example above) is not blocked by your server/client's firewall.
+
+7. Install debugger version of Flash Player available here to see Flash errors:
 http://www.adobe.com/support/flashplayer/downloads.html
 
 
