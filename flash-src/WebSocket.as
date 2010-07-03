@@ -22,7 +22,7 @@ import com.hurlant.crypto.tls.TLSEngine;
 import com.hurlant.crypto.tls.TLSSecurityParameters;
 import com.gsolo.encryption.MD5;
 
-[Event(name="message", type="WebSocketMessageEvent")]
+[Event(name="message", type="flash.events.Event")]
 [Event(name="open", type="flash.events.Event")]
 [Event(name="close", type="flash.events.Event")]
 [Event(name="error", type="flash.events.Event")]
@@ -279,7 +279,7 @@ public class WebSocket extends EventDispatcher {
           var data:String = buffer.readUTFBytes(pos - 1);
           main.log("received: " + data);
           dataQueue.push(encodeURIComponent(data));
-          dispatchEvent(new WebSocketMessageEvent("message", data.length.toString()));
+          dispatchEvent(new Event("message"));
           removeBufferBefore(pos + 1);
           pos = -1;
         } else if (pos == 1 && buffer[0] == 0xff && buffer[1] == 0x00) { // closing
@@ -297,8 +297,7 @@ public class WebSocket extends EventDispatcher {
   public function readSocketData():Array {
     var q:Array = dataQueue;
     if (dataQueue.length > 0) {
-        // Reset to empty
-        dataQueue = [];
+      dataQueue = [];
     }
     return q;
   }
