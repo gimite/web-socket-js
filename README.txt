@@ -60,7 +60,8 @@ http://github.com/gimite/web-socket-ruby/tree/master
 
 If you use other Web Socket server implementation, you need to provide socket policy file yourself. See
 http://www.lightsphere.com/dev/articles/flash_socket_policy.html
-for details and sample script to run socket policy file server.
+for details and sample script to run socket policy file server. node.js implementation is available here:
+http://github.com/LearnBoost/Socket.IO-node/blob/master/lib/socket.io/transports/flashsocket.js
 
 Actually, it's still better to provide socket policy file at port 843 even if you use web-socket-ruby. Flash always try to connect to port 843 first, so providing the file at port 843 makes startup faster.
 
