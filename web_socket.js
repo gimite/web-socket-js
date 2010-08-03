@@ -14,10 +14,10 @@
     console.error("Flash Player is not installed.");
     return;
   }
-  console.log(location.protocol);
   if (location.protocol == "file:") {
     console.error(
-      "web-socket-js doesn't work in file:///... URL (without special configuration). " +
+      "WARNING: web-socket-js doesn't work in file:///... URL " +
+      "unless you set Flash Security Settings properly. " +
       "Open the page via Web server i.e. http://...");
   }
 
