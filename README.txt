@@ -27,7 +27,9 @@ If it doesn't work, try these:
 - It works on both Chrome and Firefox, but it doesn't work on your browser:
 -- Check "Supported environment" section below. Your browser may not be supported by web-socket-js.
 
-2. Use Developer Tools (Chrome/Safari) or Firebug (Firefox) to see if console.log outputs any errors.
+2. Add this line before your code:
+  WEB_SOCKET_DEBUG = true;
+and use Developer Tools (Chrome/Safari) or Firebug (Firefox) to see if console.log outputs any errors.
 
 3. Make sure you do NOT open your HTML page as local file e.g. file:///.../sample.html. web-socket-js doesn't work on local file. Open it via Web server e.g. http:///.../sample.html.
 
