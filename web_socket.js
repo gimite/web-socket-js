@@ -10,19 +10,7 @@
   var console = window.console;
   if (!console) console = {log: function(){ }, error: function(){ }};
 
-  function hasFlash() {
-    if ('navigator' in window && 'plugins' in navigator && navigator.plugins['Shockwave Flash']) {
-      return !!navigator.plugins['Shockwave Flash'].description;
-    }
-    if ('ActiveXObject' in window) {
-      try {
-        return !!new ActiveXObject('ShockwaveFlash.ShockwaveFlash').GetVariable('$version');
-      } catch (e) {}
-    }
-    return false;
-  }
-  
-  if (!hasFlash()) {
+  if (!swfobject.hasFlashPlayerVersion("9.0.0")) {
     console.error("Flash Player is not installed.");
     return;
   }
