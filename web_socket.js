@@ -305,10 +305,15 @@
     var container = document.createElement("div");
     container.id = "webSocketContainer";
     // Puts the Flash out of the window. Note that we cannot use display: none or visibility: hidden
-    // here because it prevents Flash from loading at least in IE.
+    // here because it prevents Flash from loading at least in IE. Attempting to move it off-screen
+    // at all appears to fail on Android devices, so we'll initialize it in a 1x1 div at absolute
+    // 0, 0 with a z-index of -65535 instead.
     container.style.position = "absolute";
-    container.style.left = "-100px";
-    container.style.top = "-100px";
+    container.style.left = "0px";
+    container.style.top = "0px";
+    container.style.width = "1px";
+    container.style.height = "1px";
+    container.style.zIndex = -65535;
     var holder = document.createElement("div");
     holder.id = "webSocketFlash";
     container.appendChild(holder);
