@@ -89,7 +89,7 @@ public class WebSocket extends EventDispatcher {
         tlsConfig= new TLSConfig(TLSEngine.CLIENT,
             null, null, null, null, null,
             TLSSecurityParameters.PROTOCOL_VERSION);
-        tlsConfig.trustSelfSignedCertificates = true;
+        tlsConfig.trustAllCertificates = true;
         tlsConfig.ignoreCommonNameMismatch = true;
         tlsSocket = new TLSSocket();
         tlsSocket.addEventListener(ProgressEvent.SOCKET_DATA, onSocketData);
