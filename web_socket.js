@@ -294,32 +294,6 @@
   WebSocket.__tasks = [];
 
   WebSocket.__initialize = function() {
-    var getBrowserInfo = function() {
-      var bInfo = {
-        platform: '',
-        plugins: {}
-      };
-      if (window.navigator) {
-        if (window.navigator.userAgent) {
-          var userAgent = window.navigator.userAgent;
-          if (userAgent.match(/Android/i)) bInfo.platform = 'android';
-        }
-        if (window.navigator.plugins) {
-          var plugins = window.navigator.plugins, plugin = undefined;
-          for (var i = 0, j = plugins.length; i < j; i++) {
-            plugin = plugins.item(i);
-            if (plugin.name) {
-              if (plugin.name.match(/Shockwave Flash/i)) {
-                bInfo.plugins.flash = true;
-                // If there's a better way to detect Flash Lite before loading a SWF, I'd like to know.
-                if (plugin.filename && plugin.filename.match(/flashlite/i)) bInfo.plugins.flash_lite = true;
-              }
-            }
-          }
-        }
-      }
-      return bInfo;
-    };
     if (WebSocket.__swfLocation) {
       // For backword compatibility.
       window.WEB_SOCKET_SWF_LOCATION = WebSocket.__swfLocation;
@@ -330,39 +304,28 @@
     }
     var container = document.createElement("div");
     container.id = "webSocketContainer";
+    // Hides Flash box. We cannot use display: none or visibility: hidden because it prevents
+    // Flash from loading at least in IE. So we move it out of the screen at (-100, -100).
+    // But this even doesn't work with Flash Lite (e.g. in Droid Incredible). So with Flash
+    // Lite, we put it at (0, 0). This shows 1x1 box visible at left-top corner but this is
+    // the best we can do as far as we know now.
     container.style.position = "absolute";
-    var browserInfo = getBrowserInfo();
-    var left = '', top = '', height = '', width = '';
-    // Attempt to handle Flash Lite differently
-    if (browserInfo.plugins.flash_lite) {
-      // Define and handle different platforms using Flash Lite as necessary.
-      switch (browserInfo.platform) {
-        case 'android':
-        default:
-          // Handle Flash Lite slightly differently.
-          // Plugin must be visible to run, so make it as small as possible.
-          left = "0px";
-          top = "0px";
-          height = "1";
-          width = "1";
-          break;
-      }
+    if (WebSocket.__isFlashLite()) {
+      container.style.left = "0px";
+      container.style.top = "0px";
     } else {
-      // Puts the Flash out of the window. Note that we cannot use display: none or visibility: hidden
-      // here because it prevents Flash from loading at least in IE.
-      left = "-100px";
-      top = "-100px";
-      height = "8";
-      width = "8";
+      container.style.left = "-100px";
+      container.style.top = "-100px";
     }
-    container.style.left = left;
-    container.style.top = top;
     var holder = document.createElement("div");
     holder.id = "webSocketFlash";
     container.appendChild(holder);
     document.body.appendChild(container);
+    // See this article for hasPriority:
+    // http://help.adobe.com/en_US/as3/mobile/WS4bebcd66a74275c36cfb8137124318eebc6-7ffd.html
     swfobject.embedSWF(
-      WEB_SOCKET_SWF_LOCATION, "webSocketFlash", width, height, "9.0.0",
+      WEB_SOCKET_SWF_LOCATION, "webSocketFlash",
+      "1" /* width */, "1" /* height */, "9.0.0" /* SWF version */,
       null, {bridgeName: "webSocket"}, {hasPriority: true}, null,
       function(e) {
         if (!e.success) console.error("[WebSocket] swfobject.embedSWF failed");
@@ -390,7 +353,14 @@
     } else {
       WebSocket.__tasks.push(task);
     }
-  }
+  };
+  
+  WebSocket.__isFlashLite = function() {
+    if (!window.navigator || !window.navigator.mimeTypes) return false;
+    var mimeType = window.navigator.mimeTypes["application/x-shockwave-flash"];
+    if (!mimeType || !mimeType.enabledPlugin || !mimeType.enabledPlugin.filename) return false;
+    return mimeType.enabledPlugin.filename.match(/flashlite/i) ? true : false;
+  };
 
   // called from Flash
   window.webSocketLog = function(message) {
