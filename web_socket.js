@@ -304,25 +304,11 @@
     }
     var container = document.createElement("div");
     container.id = "webSocketContainer";
-    // Hides Flash box. Uses two different ways depending on the browser, because I haven't
-    // found a way to make every browser happy. Some rationales:
-    // - In IE, display: none or visibility: hidden prevents Flash from loading.
-    // - In Android browser, moving the box out of the screen prevents Flash from loading.
-    // - In Firefox with Flash blocker, setting negative zIndex prevents the user to click
-    //   unblock button.
+    // Puts the Flash out of the window. Note that we cannot use display: none or visibility: hidden
+    // here because it prevents Flash from loading at least in IE.
     container.style.position = "absolute";
-    if (window.navigator && window.navigator.userAgent &&
-        window.navigator.userAgent.match(/Mobile Safari/)) {
-      // Android browser etc.
-      container.style.left = "0px";
-      container.style.top = "0px";
-      container.style.width = "1px";
-      container.style.height = "1px";
-      container.style.zIndex = -65535;
-    } else {
-      container.style.left = "-100px";
-      container.style.top = "-100px";
-    }
+    container.style.left = "-100px";
+    container.style.top = "-100px";
     var holder = document.createElement("div");
     holder.id = "webSocketFlash";
     container.appendChild(holder);
