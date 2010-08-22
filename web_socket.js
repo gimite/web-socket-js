@@ -294,6 +294,32 @@
   WebSocket.__tasks = [];
 
   WebSocket.__initialize = function() {
+    var getBrowserInfo = function() {
+      var bInfo = {
+        platform: '',
+        plugins: {}
+      };
+      if (window.navigator) {
+        if (window.navigator.userAgent) {
+          var userAgent = window.navigator.userAgent;
+          if (userAgent.match(/Android/i)) bInfo.platform = 'android';
+        }
+        if (window.navigator.plugins) {
+          var plugins = window.navigator.plugins, plugin = undefined;
+          for (var i = 0, j = plugins.length; i < j; i++) {
+            plugin = plugins.item(i);
+            if (plugin.name) {
+              if (plugin.name.match(/Shockwave Flash/i)) {
+                bInfo.plugins.flash = true;
+                // If there's a better way to detect Flash Lite before loading a SWF, I'd like to know.
+                if (plugin.filename && plugin.filename.match(/flashlite/i)) bInfo.plugins.flash_lite = true;
+              }
+            }
+          }
+        }
+      }
+      return bInfo;
+    };
     if (WebSocket.__swfLocation) {
       // For backword compatibility.
       window.WEB_SOCKET_SWF_LOCATION = WebSocket.__swfLocation;
@@ -304,18 +330,40 @@
     }
     var container = document.createElement("div");
     container.id = "webSocketContainer";
-    // Puts the Flash out of the window. Note that we cannot use display: none or visibility: hidden
-    // here because it prevents Flash from loading at least in IE.
     container.style.position = "absolute";
-    container.style.left = "-100px";
-    container.style.top = "-100px";
+    var browserInfo = getBrowserInfo();
+    var left = '', top = '', height = '', width = '';
+    // Attempt to handle Flash Lite differently
+    if (browserInfo.plugins.flash_lite) {
+      // Define and handle different platforms using Flash Lite as necessary.
+      switch (browserInfo.platform) {
+        case 'android':
+        default:
+          // Handle Flash Lite slightly differently.
+          // Plugin must be visible to run, so make it as small as possible.
+          left = "0px";
+          top = "0px";
+          height = "1";
+          width = "1";
+          break;
+      }
+    } else {
+      // Puts the Flash out of the window. Note that we cannot use display: none or visibility: hidden
+      // here because it prevents Flash from loading at least in IE.
+      left = "-100px";
+      top = "-100px";
+      height = "8";
+      width = "8";
+    }
+    container.style.left = left;
+    container.style.top = top;
     var holder = document.createElement("div");
     holder.id = "webSocketFlash";
     container.appendChild(holder);
     document.body.appendChild(container);
     swfobject.embedSWF(
-      WEB_SOCKET_SWF_LOCATION, "webSocketFlash", "8", "8", "9.0.0",
-      null, {bridgeName: "webSocket"}, null, null,
+      WEB_SOCKET_SWF_LOCATION, "webSocketFlash", width, height, "9.0.0",
+      null, {bridgeName: "webSocket"}, {hasPriority: true}, null,
       function(e) {
         if (!e.success) console.error("[WebSocket] swfobject.embedSWF failed");
       }
