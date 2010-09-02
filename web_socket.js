@@ -326,7 +326,7 @@
     swfobject.embedSWF(
       WEB_SOCKET_SWF_LOCATION, "webSocketFlash",
       "1" /* width */, "1" /* height */, "9.0.0" /* SWF version */,
-      null, {bridgeName: "webSocket"}, {hasPriority: true}, null,
+      null, {bridgeName: "webSocket"}, {hasPriority: true, allowScriptAccess: "always"}, null,
       function(e) {
         if (!e.success) console.error("[WebSocket] swfobject.embedSWF failed");
       }
