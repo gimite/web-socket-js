@@ -120,7 +120,7 @@
     var self = this;
     if (!self.__flash) return;
     self.readyState = self.__flash.getReadyState();
-    if (self.readyState != WebSocket.OPEN) return;
+    if (self.readyState == WebSocket.CLOSED || self.readyState == WebSocket.CLOSING) return;
     self.__flash.close();
     // Sets/calls them manually here because Flash WebSocketConnection.close cannot fire events
     // which causes weird error:

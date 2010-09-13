@@ -133,9 +133,11 @@ public class WebSocket extends EventDispatcher {
     main.log("close");
     dataQueue = [];
     try {
-      socket.writeByte(0xff);
-      socket.writeByte(0x00);
-      socket.flush();
+      if (readyState == OPEN) {
+        socket.writeByte(0xff);
+        socket.writeByte(0x00);
+        socket.flush();
+      }
       socket.close();
     } catch (ex:Error) { }
     readyState = CLOSED;
