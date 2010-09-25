@@ -209,10 +209,10 @@
       try {
         if (this.onmessage) {
           var e;
-          if (window.MessageEvent) {
+          if (window.MessageEvent && !window.opera) {
             e = document.createEvent("MessageEvent");
             e.initMessageEvent("message", false, false, data, null, null, window, null);
-          } else { // IE
+          } else { // IE and Opera, the latter one truncates the data parameter after any 0x00 bytes
             e = {data: data};
           }
           this.onmessage(e);
