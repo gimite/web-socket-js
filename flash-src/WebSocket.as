@@ -248,8 +248,7 @@ public class WebSocket extends EventDispatcher {
           headerState = 0;
         }
         if (headerState == 4) {
-          buffer.position = 0;
-          var headerStr:String = buffer.readUTFBytes(pos + 1);
+          var headerStr:String = readUTFBytes(buffer, 0, pos + 1);
           main.log("response header:\n" + headerStr);
           if (!validateHeader(headerStr)) return;
           removeBufferBefore(pos + 1);
@@ -257,8 +256,7 @@ public class WebSocket extends EventDispatcher {
         }
       } else if (headerState == 4) {
         if (pos == 15) {
-          buffer.position = 0;
-          var replyDigest:String = readBytes(buffer, 16);
+          var replyDigest:String = readBytes(buffer, 0, 16);
           main.log("reply digest: " + replyDigest);
           if (replyDigest != expectedDigest) {
             onError("digest doesn't match: " + replyDigest + " != " + expectedDigest);
@@ -277,15 +275,7 @@ public class WebSocket extends EventDispatcher {
             onError("data must start with \\x00");
             return;
           }
-          buffer.position = 1;
-          var data:String = "";
-          for(var i:int = 1; i < pos; i++) {
-            if (buffer[i] == 0x00) {
-              data += buffer.readUTFBytes(i - buffer.position) + "\x00";
-              buffer.position = i + 1;
-            }
-          }
-          data += buffer.readUTFBytes(pos - buffer.position);
+          var data:String = readUTFBytes(buffer, 1, pos - 1);
           main.log("received: " + data);
           dataQueue.push(encodeURIComponent(data));
           dispatchEvent(new Event("message"));
@@ -441,13 +431,28 @@ public class WebSocket extends EventDispatcher {
   
   // Reads specified number of bytes from buffer, and returns it as special format String
   // where bytes[i] is i-th byte (not i-th character).
-  private function readBytes(buffer:ByteArray, numBytes:int):String {
+  private function readBytes(buffer:ByteArray, start:int, numBytes:int):String {
+    buffer.position = start;
     var bytes:String = "";
     for (var i:int = 0; i < numBytes; ++i) {
       // & 0xff is to make \x80-\xff positive number.
       bytes += String.fromCharCode(buffer.readByte() & 0xff);
     }
     return bytes;
+  }
+  
+  private function readUTFBytes(buffer:ByteArray, start:int, numBytes:int):String {
+    buffer.position = start;
+    var data:String = "";
+    for(var i:int = start; i < start + numBytes; ++i) {
+      // Workaround of a bug of ByteArray#readUTFBytes() that bytes after "\x00" is discarded.
+      if (buffer[i] == 0x00) {
+        data += buffer.readUTFBytes(i - buffer.position) + "\x00";
+        buffer.position = i + 1;
+      }
+    }
+    data += buffer.readUTFBytes(start + numBytes - buffer.position);
+    return data;
   }
   
   private function randomInt(min:uint, max:uint):uint {
