@@ -279,15 +279,13 @@ public class WebSocket extends EventDispatcher {
           }
           buffer.position = 1;
           var data:String = "";
-          for(var i:int = 1, zeroByte:String = String.fromCharCode(0x00); i <= pos; i++) {
+          for(var i:int = 1; i < pos; i++) {
             if (buffer[i] == 0x00) {
-              data += buffer.readUTFBytes(pos - buffer.position) + zeroByte;
+              data += buffer.readUTFBytes(i - buffer.position) + "\x00";
               buffer.position = i + 1;
-            
-            } else if (buffer[i] == 0xff) {
-              data += buffer.readUTFBytes(buffer.bytesAvailable - 1);
             }
           }
+          data += buffer.readUTFBytes(pos - buffer.position);
           main.log("received: " + data);
           dataQueue.push(encodeURIComponent(data));
           dispatchEvent(new Event("message"));
