@@ -19,7 +19,6 @@ import bridge.FABridge;
 
 public class WebSocketMain extends Sprite {
 
-  private var policyLoaded:Boolean = false;
   private var callerUrl:String;
   private var debug:Boolean = false;
 
@@ -51,7 +50,7 @@ public class WebSocketMain extends Sprite {
       url:String, protocol:String,
       proxyHost:String = null, proxyPort:int = 0,
       headers:String = null):WebSocket {
-    loadPolicyFile(null);
+    loadPolicyFile("xmlsocket://" + URLUtil.getServerName(url) + ":843");
     return new WebSocket(this, url, protocol, proxyHost, proxyPort, headers);
   }
 
@@ -65,13 +64,8 @@ public class WebSocketMain extends Sprite {
   }
 
   public function loadPolicyFile(url:String):void {
-    if (policyLoaded && !url) return;
-    if (!url) {
-      url = "xmlsocket://" + URLUtil.getServerName(this.callerUrl) + ":843";
-    }
     log("policy file: " + url);
     Security.loadPolicyFile(url);
-    policyLoaded = true;
   }
 
   public function log(message:String):void {
