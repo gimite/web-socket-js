@@ -34,7 +34,7 @@
         self.__createFlash(url, protocol, proxyHost, proxyPort, headers);
       });
     }, 1);
-  }
+  };
   
   WebSocket.prototype.__createFlash = function(url, protocol, proxyHost, proxyPort, headers) {
     var self = this;
@@ -239,7 +239,7 @@
       }
       object.dispatchEvent(event, arguments);
     };
-  }
+  };
 
   /**
    * Basic implementation of {@link <a href="http://www.w3.org/TR/DOM-Level-2-Events/events.html#Events-interface">DOM 2 EventInterface</a>}
