@@ -300,6 +300,12 @@
 
   WebSocket.__tasks = [];
 
+  WebSocket.loadPolicyFile = function(url) {
+      WebSocket.__addTask(function() {
+         WebSocket.__flash.loadPolicyFile(url);
+      });
+  }
+
   WebSocket.__initialize = function() {
     if (WebSocket.__swfLocation) {
       // For backword compatibility.

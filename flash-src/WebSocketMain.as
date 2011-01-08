@@ -50,7 +50,6 @@ public class WebSocketMain extends Sprite {
       url:String, protocol:String,
       proxyHost:String = null, proxyPort:int = 0,
       headers:String = null):WebSocket {
-    loadPolicyFile("xmlsocket://" + URLUtil.getServerName(url) + ":843");
     return new WebSocket(this, url, protocol, proxyHost, proxyPort, headers);
   }
 
@@ -65,7 +64,7 @@ public class WebSocketMain extends Sprite {
 
   public function loadPolicyFile(url:String):void {
     log("policy file: " + url);
-    Security.loadPolicyFile(url);
+    Security.loadPolicyFile("xmlsocket://" + URLUtil.getServerNameWithPort(url));
   }
 
   public function log(message:String):void {
