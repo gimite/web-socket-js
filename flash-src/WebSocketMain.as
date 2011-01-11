@@ -21,6 +21,7 @@ public class WebSocketMain extends Sprite {
 
   private var callerUrl:String;
   private var debug:Boolean = false;
+  private var manualPolicyFileLoaded:Boolean = false;
 
   public function WebSocketMain() {
     
@@ -50,6 +51,9 @@ public class WebSocketMain extends Sprite {
       url:String, protocol:String,
       proxyHost:String = null, proxyPort:int = 0,
       headers:String = null):WebSocket {
+    if (!manualPolicyFileLoaded) {
+      loadDefaultPolicyFile(url);
+    }
     return new WebSocket(this, url, protocol, proxyHost, proxyPort, headers);
   }
 
@@ -62,9 +66,16 @@ public class WebSocketMain extends Sprite {
     return URLUtil.getServerName(this.callerUrl);
   }
 
-  public function loadPolicyFile(url:String):void {
-    log("policy file: " + url);
-    Security.loadPolicyFile("xmlsocket://" + URLUtil.getServerNameWithPort(url));
+  private function loadDefaultPolicyFile(wsUrl:String):void {
+    var policyUrl:String = "xmlsocket://" + URLUtil.getServerName(wsUrl) + ":843";
+    log("policy file: " + policyUrl);
+    Security.loadPolicyFile(policyUrl);
+  }
+
+  public function loadManualPolicyFile(policyUrl:String):void {
+    log("policy file: " + policyUrl);
+    Security.loadPolicyFile(policyUrl);
+    manualPolicyFileLoaded = true;
   }
 
   public function log(message:String):void {

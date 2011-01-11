@@ -300,10 +300,10 @@
 
   WebSocket.__tasks = [];
 
-  WebSocket.loadPolicyFile = function(url) {
-      WebSocket.__addTask(function() {
-         WebSocket.__flash.loadPolicyFile(url);
-      });
+  WebSocket.loadFlashPolicyFile = function(url) {
+    WebSocket.__addTask(function() {
+      WebSocket.__flash.loadManualPolicyFile(url);
+    });
   }
 
   WebSocket.__initialize = function() {
