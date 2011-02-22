@@ -5,22 +5,24 @@
 
 package {
 
+import com.adobe.net.proxies.RFC2817Socket;
+import com.gsolo.encryption.MD5;
+import com.hurlant.crypto.tls.TLSConfig;
+import com.hurlant.crypto.tls.TLSEngine;
+import com.hurlant.crypto.tls.TLSSecurityParameters;
+import com.hurlant.crypto.tls.TLSSocket;
+
 import flash.display.*;
 import flash.events.*;
 import flash.external.*;
 import flash.net.*;
 import flash.system.*;
 import flash.utils.*;
-import mx.core.*;
+
 import mx.controls.*;
+import mx.core.*;
 import mx.events.*;
 import mx.utils.*;
-import com.adobe.net.proxies.RFC2817Socket;
-import com.hurlant.crypto.tls.TLSSocket;
-import com.hurlant.crypto.tls.TLSConfig;
-import com.hurlant.crypto.tls.TLSEngine;
-import com.hurlant.crypto.tls.TLSSecurityParameters;
-import com.gsolo.encryption.MD5;
 
 [Event(name="event", type="flash.events.Event")]
 public class WebSocket extends EventDispatcher {
@@ -29,6 +31,8 @@ public class WebSocket extends EventDispatcher {
   private static var OPEN:int = 1;
   private static var CLOSING:int = 2;
   private static var CLOSED:int = 3;
+  
+  private var socketId : Number;
   
   private var rawSocket:Socket;
   private var tlsSocket:TLSSocket;
@@ -43,7 +47,6 @@ public class WebSocket extends EventDispatcher {
   private var origin:String;
   private var protocol:String;
   private var buffer:ByteArray = new ByteArray();
-  private var eventQueue:Array = [];
   private var headerState:int = 0;
   private var readyState:int = CONNECTING;
   private var headers:String;
@@ -51,10 +54,11 @@ public class WebSocket extends EventDispatcher {
   private var expectedDigest:String;
 
   public function WebSocket(
-      main:WebSocketMain, url:String, protocol:String,
+      main:WebSocketMain, webSocketId : Number, url:String, protocol:String,
       proxyHost:String = null, proxyPort:int = 0,
       headers:String = null) {
     this.main = main;
+	this.socketId = webSocketId;
     initNoiseChars();
     this.url = url;
     var m:Array = url.match(/^(\w+):\/\/([^\/:]+)(:(\d+))?(\/.*)?$/);
@@ -101,6 +105,22 @@ public class WebSocket extends EventDispatcher {
     rawSocket.connect(host, port);
   }
   
+  /**
+  * socketId accessor
+  * @return	This WebSocket's ID.
+  */
+  public function get webSocketId() : Number {
+	  return this.socketId;
+  }
+  
+  /**
+  * readyState accessor
+  * @return this WebSocket's readyState.
+  */
+  public function get readOnly_readyState() : int {
+	  return this.readyState;
+  }
+  
   public function send(encData:String):int {
     var data:String = decodeURIComponent(encData);
     if (readyState == OPEN) {
@@ -122,7 +142,6 @@ public class WebSocket extends EventDispatcher {
   
   public function close():void {
     main.log("close");
-    eventQueue = [];
     try {
       if (readyState == OPEN) {
         socket.writeByte(0xff);
@@ -132,9 +151,7 @@ public class WebSocket extends EventDispatcher {
       socket.close();
     } catch (ex:Error) { }
     readyState = CLOSED;
-    // We don't fire any events here because it causes weird error:
-    // > You are trying to call recursively into the Flash Player which is not allowed.
-    // We do something equivalent in JavaScript WebSocket#close instead.
+	this.dispatchEvent(new WebSocketEvent(WebSocketEvent.CLOSE));
   }
   
   private function onSocketConnect(event:Event):void {
@@ -181,7 +198,7 @@ public class WebSocket extends EventDispatcher {
   private function onSocketClose(event:Event):void {
     main.log("closed");
     readyState = CLOSED;
-    fireEvent({type: "close"}, true);
+	this.dispatchEvent(new WebSocketEvent(WebSocketEvent.CLOSE));
   }
 
   private function onSocketIoError(event:IOErrorEvent):void {
@@ -210,8 +227,9 @@ public class WebSocket extends EventDispatcher {
     var state:int = readyState;
     if (state == CLOSED) return;
     main.error(message);
+	
+	this.dispatchEvent(new WebSocketEvent(WebSocketEvent.ERROR, encodeURIComponent(message)));
     close();
-    fireEvent({type: state == CONNECTING ? "close" : "error"}, true);
   }
 
   private function onSocketData(event:ProgressEvent):void {
@@ -246,7 +264,7 @@ public class WebSocket extends EventDispatcher {
           removeBufferBefore(pos + 1);
           pos = -1;
           readyState = OPEN;
-          fireEvent({type: "open"}, true);
+		  this.dispatchEvent(new WebSocketEvent(WebSocketEvent.OPEN));
         }
       } else {
         if (buffer[pos] == 0xff && pos > 0) {
@@ -256,7 +274,7 @@ public class WebSocket extends EventDispatcher {
           }
           var data:String = readUTFBytes(buffer, 1, pos - 1);
           main.log("received: " + data);
-          fireEvent({type: "message", data: encodeURIComponent(data)}, false);
+		  this.dispatchEvent(new WebSocketEvent(WebSocketEvent.MESSAGE, encodeURIComponent(data)));
           removeBufferBefore(pos + 1);
           pos = -1;
         } else if (pos == 1 && buffer[0] == 0xff && buffer[1] == 0x00) { // closing
@@ -264,16 +282,9 @@ public class WebSocket extends EventDispatcher {
           removeBufferBefore(pos + 1);
           pos = -1;
           close();
-          fireEvent({type: "close"}, true);
         }
       }
     }
-  }
-
-  public function receiveEvents():Array {
-    var q:Array = eventQueue;
-    eventQueue = [];
-    return q;
   }
   
   private function validateHeader(headerStr:String):Boolean {
@@ -333,14 +344,6 @@ public class WebSocket extends EventDispatcher {
     buffer.position = pos;
     buffer.readBytes(nextBuffer);
     buffer = nextBuffer;
-  }
-  
-  private function fireEvent(event:Object, stateChanged:Boolean):void {
-    if (stateChanged) {
-      event.readyState = readyState;
-    }
-    eventQueue.push(event);
-    dispatchEvent(new Event("event"));
   }
   
   private function initNoiseChars():void {
