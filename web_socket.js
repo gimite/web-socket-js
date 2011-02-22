@@ -5,23 +5,36 @@
 
 (function() {
   
-	if (window.WebSocket) return;
-	
-	var console = window.console;
-	if (!console || !console.log || !console.error) {
-		console = {log: function(){ }, error: function(){ }};
-	}
-	
-	if (!swfobject.hasFlashPlayerVersion("9.0.0")) {
-		console.error("Flash Player is not installed.");
-		return;
-	}
-	if (location.protocol == "file:") {
-		console.error(
-			"WARNING: web-socket-js doesn't work in file:///... URL " +
-			"unless you set Flash Security Settings properly. " +
-			"Open the page via Web server i.e. http://...");
-	}
+  if (window.WebSocket) return;
+
+  var console = window.console;
+  if (!console || !console.log || !console.error) {
+    console = {log: function(){ }, error: function(){ }};
+  }
+  
+  if (!swfobject.hasFlashPlayerVersion("10.0.0")) {
+    console.error("Flash Player >= 10.0.0 is required.");
+    return;
+  }
+  if (location.protocol == "file:") {
+    console.error(
+      "WARNING: web-socket-js doesn't work in file:///... URL " +
+      "unless you set Flash Security Settings properly. " +
+      "Open the page via Web server i.e. http://...");
+  }
+
+  WebSocket = function(url, protocol, proxyHost, proxyPort, headers) {
+    var self = this;
+    self.readyState = WebSocket.CONNECTING;
+    self.bufferedAmount = 0;
+    // Uses setTimeout() to make sure __createFlash() runs after the caller sets ws.onopen etc.
+    // Otherwise, when onopen fires immediately, onopen is called before it is set.
+    setTimeout(function() {
+      WebSocket.__addTask(function() {
+        self.__createFlash(url, protocol, proxyHost, proxyPort, headers);
+      });
+    }, 0);
+  };
   
 	WebSocketController = function() {
 		this._webSockets = {};
