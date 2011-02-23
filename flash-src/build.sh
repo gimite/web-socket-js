@@ -8,6 +8,6 @@ mxmlc -static-link-runtime-shared-libraries -output=../WebSocketMainInsecure.swf
 compc -source-path . -include-classes WebSocket IWebSocketWrapper -output=../WebSocket.swc &&
 cd .. &&
 zip WebSocketMainInsecure.zip WebSocketMainInsecure.swf WebSocket.swc &&
-rm WebSocketMainInsecure.swf &&
-rm WebSocket.swc
+rm WebSocketMainInsecure.swf 
+
 
