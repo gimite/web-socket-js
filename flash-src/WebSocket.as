@@ -34,7 +34,7 @@ public class WebSocket extends EventDispatcher {
   private var tlsSocket:TLSSocket;
   private var tlsConfig:TLSConfig;
   private var socket:Socket;
-  private var main:WebSocketMain;
+  private var main:IWebSocketWrapper;
   private var url:String;
   private var scheme:String;
   private var host:String;
@@ -51,7 +51,7 @@ public class WebSocket extends EventDispatcher {
   private var expectedDigest:String;
 
   public function WebSocket(
-      main:WebSocketMain, url:String, protocol:String,
+      main:IWebSocketWrapper, url:String, protocol:String,
       proxyHost:String = null, proxyPort:int = 0,
       headers:String = null) {
     this.main = main;

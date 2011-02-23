@@ -17,7 +17,7 @@ import mx.events.*;
 import mx.utils.*;
 import bridge.FABridge;
 
-public class WebSocketMain extends Sprite {
+public class WebSocketMain extends Sprite implements IWebSocketWrapper{
 
   private var callerUrl:String;
   private var debug:Boolean = false;
