@@ -24,7 +24,6 @@ import mx.core.*;
 import mx.events.*;
 import mx.utils.*;
 
-[Event(name="event", type="flash.events.Event")]
 public class WebSocket extends EventDispatcher {
   
   private static var CONNECTING:int = 0;
@@ -32,8 +31,7 @@ public class WebSocket extends EventDispatcher {
   private static var CLOSING:int = 2;
   private static var CLOSED:int = 3;
   
-  private var socketId : Number;
-  
+  private var id:int;
   private var rawSocket:Socket;
   private var tlsSocket:TLSSocket;
   private var tlsConfig:TLSConfig;
@@ -54,11 +52,11 @@ public class WebSocket extends EventDispatcher {
   private var expectedDigest:String;
 
   public function WebSocket(
-      main:WebSocketMain, webSocketId : Number, url:String, protocol:String,
+      main:WebSocketMain, id:int, url:String, protocol:String,
       proxyHost:String = null, proxyPort:int = 0,
       headers:String = null) {
     this.main = main;
-	this.socketId = webSocketId;
+    this.id = id;
     initNoiseChars();
     this.url = url;
     var m:Array = url.match(/^(\w+):\/\/([^\/:]+)(:(\d+))?(\/.*)?$/);
@@ -106,19 +104,17 @@ public class WebSocket extends EventDispatcher {
   }
   
   /**
-  * socketId accessor
-  * @return	This WebSocket's ID.
-  */
-  public function get webSocketId() : Number {
-	  return this.socketId;
+   * @return  This WebSocket's ID.
+   */
+  public function getId():int {
+    return this.id;
   }
   
   /**
-  * readyState accessor
-  * @return this WebSocket's readyState.
-  */
-  public function get readOnly_readyState() : int {
-	  return this.readyState;
+   * @return this WebSocket's readyState.
+   */
+  public function getReadyState():int {
+    return this.readyState;
   }
   
   public function send(encData:String):int {
@@ -140,10 +136,10 @@ public class WebSocket extends EventDispatcher {
     }
   }
   
-  public function close():void {
+  public function close(isError:Boolean = false):void {
     main.log("close");
     try {
-      if (readyState == OPEN) {
+      if (readyState == OPEN && !isError) {
         socket.writeByte(0xff);
         socket.writeByte(0x00);
         socket.flush();
@@ -151,7 +147,7 @@ public class WebSocket extends EventDispatcher {
       socket.close();
     } catch (ex:Error) { }
     readyState = CLOSED;
-	this.dispatchEvent(new WebSocketEvent(WebSocketEvent.CLOSE));
+    this.dispatchEvent(new WebSocketEvent(isError ? "error" : "close"));
   }
   
   private function onSocketConnect(event:Event):void {
@@ -198,7 +194,7 @@ public class WebSocket extends EventDispatcher {
   private function onSocketClose(event:Event):void {
     main.log("closed");
     readyState = CLOSED;
-	this.dispatchEvent(new WebSocketEvent(WebSocketEvent.CLOSE));
+    this.dispatchEvent(new WebSocketEvent("close"));
   }
 
   private function onSocketIoError(event:IOErrorEvent):void {
@@ -224,12 +220,9 @@ public class WebSocket extends EventDispatcher {
   }
   
   private function onError(message:String):void {
-    var state:int = readyState;
-    if (state == CLOSED) return;
+    if (readyState == CLOSED) return;
     main.error(message);
-	
-	this.dispatchEvent(new WebSocketEvent(WebSocketEvent.ERROR, encodeURIComponent(message)));
-    close();
+    close(readyState != CONNECTING);
   }
 
   private function onSocketData(event:ProgressEvent):void {
@@ -264,7 +257,7 @@ public class WebSocket extends EventDispatcher {
           removeBufferBefore(pos + 1);
           pos = -1;
           readyState = OPEN;
-		  this.dispatchEvent(new WebSocketEvent(WebSocketEvent.OPEN));
+          this.dispatchEvent(new WebSocketEvent("open"));
         }
       } else {
         if (buffer[pos] == 0xff && pos > 0) {
@@ -274,7 +267,7 @@ public class WebSocket extends EventDispatcher {
           }
           var data:String = readUTFBytes(buffer, 1, pos - 1);
           main.log("received: " + data);
-		  this.dispatchEvent(new WebSocketEvent(WebSocketEvent.MESSAGE, encodeURIComponent(data)));
+          this.dispatchEvent(new WebSocketEvent("message", encodeURIComponent(data)));
           removeBufferBefore(pos + 1);
           pos = -1;
         } else if (pos == 1 && buffer[0] == 0xff && buffer[1] == 0x00) { // closing
