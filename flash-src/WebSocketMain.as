@@ -15,7 +15,7 @@ import mx.utils.URLUtil;
 /**
   * Provides JavaScript API of WebSocket.
   */
-public class WebSocketMain extends Sprite implements IWebSocketWrapper{
+public class WebSocketMain extends Sprite implements IWebSocketLogger{
   
   private var callerUrl:String;
   private var debug:Boolean = false;
@@ -34,25 +34,12 @@ public class WebSocketMain extends Sprite implements IWebSocketWrapper{
     ExternalInterface.call("WebSocket.__onFlashInitialized");
   }
   
-  /*************
-   * Initialization / Utility methods
-   */
-  
   public function setCallerUrl(url:String):void {
     callerUrl = url;
   }
   
   public function setDebug(val:Boolean):void {
     debug = val;
-  }
-  
-  public function getOrigin():String {
-    return (URLUtil.getProtocol(this.callerUrl) + "://" +
-      URLUtil.getServerNameWithPort(this.callerUrl)).toLowerCase();
-  }
-  
-  public function getCallerHost():String {
-    return URLUtil.getServerName(this.callerUrl);
   }
   
   private function loadDefaultPolicyFile(wsUrl:String):void {
@@ -89,19 +76,17 @@ public class WebSocketMain extends Sprite implements IWebSocketWrapper{
     return eventObj;
   }
   
-  /**
-   * Socket interface
-   */
   public function create(
-    webSocketId:int,
-    url:String, protocol:String,
-    proxyHost:String = null, proxyPort:int = 0,
-    headers:String = null):void {
+      webSocketId:int,
+      url:String, protocol:String,
+      proxyHost:String = null, proxyPort:int = 0,
+      headers:String = null):void {
     if (!manualPolicyFileLoaded) {
       loadDefaultPolicyFile(url);
     }
     var newSocket:WebSocket = new WebSocket(
-        this, webSocketId, url, protocol, proxyHost, proxyPort, headers);
+        webSocketId, url, protocol, getOrigin(), proxyHost, proxyPort,
+        getCookie(url), headers, this);
     newSocket.addEventListener("open", onSocketEvent);
     newSocket.addEventListener("close", onSocketEvent);
     newSocket.addEventListener("error", onSocketEvent);
@@ -125,8 +110,22 @@ public class WebSocketMain extends Sprite implements IWebSocketWrapper{
     return result;
   }
   
-  /****************
-   * Socket event handler
+  private function getOrigin():String {
+    return (URLUtil.getProtocol(this.callerUrl) + "://" +
+      URLUtil.getServerNameWithPort(this.callerUrl)).toLowerCase();
+  }
+  
+  private function getCookie(url:String):String {
+    if (URLUtil.getServerName(url).toLowerCase() ==
+        URLUtil.getServerName(this.callerUrl).toLowerCase()) {
+      return ExternalInterface.call("function(){return document.cookie}");
+    } else {
+      return "";
+    }
+  }
+  
+  /**
+   * Socket event handler.
    */
   public function onSocketEvent(event:WebSocketEvent):void {
     var eventObj:Object = parseEvent(event);

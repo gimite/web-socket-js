@@ -36,7 +36,6 @@ public class WebSocket extends EventDispatcher {
   private var tlsSocket:TLSSocket;
   private var tlsConfig:TLSConfig;
   private var socket:Socket;
-  private var main:IWebSocketWrapper;
   private var url:String;
   private var scheme:String;
   private var host:String;
@@ -47,15 +46,18 @@ public class WebSocket extends EventDispatcher {
   private var buffer:ByteArray = new ByteArray();
   private var headerState:int = 0;
   private var readyState:int = CONNECTING;
+  private var cookie:String;
   private var headers:String;
   private var noiseChars:Array;
   private var expectedDigest:String;
+  private var logger:IWebSocketLogger;
 
   public function WebSocket(
-      main:IWebSocketWrapper, id:int, url:String, protocol:String,
-      proxyHost:String = null, proxyPort:int = 0,
-      headers:String = null) {
-    this.main = main;
+      id:int, url:String, protocol:String, origin:String,
+      proxyHost:String, proxyPort:int,
+      cookie:String, headers:String,
+      logger:IWebSocketLogger) {
+    this.logger = logger;
     this.id = id;
     initNoiseChars();
     this.url = url;
@@ -65,8 +67,9 @@ public class WebSocket extends EventDispatcher {
     this.host = m[2];
     this.port = parseInt(m[4] || "80");
     this.path = m[5] || "/";
-    this.origin = main.getOrigin();
+    this.origin = origin;
     this.protocol = protocol;
+    this.cookie = cookie;
     // if present and not the empty string, headers MUST end with \r\n
     // headers should be zero or more complete lines, for example
     // "Header1: xxx\r\nHeader2: yyyy\r\n"
@@ -124,7 +127,7 @@ public class WebSocket extends EventDispatcher {
       socket.writeUTFBytes(data);
       socket.writeByte(0xff);
       socket.flush();
-      main.log("sent: " + data);
+      logger.log("sent: " + data);
       return -1;
     } else if (readyState == CLOSING || readyState == CLOSED) {
       var bytes:ByteArray = new ByteArray();
@@ -137,7 +140,7 @@ public class WebSocket extends EventDispatcher {
   }
   
   public function close(isError:Boolean = false):void {
-    main.log("close");
+    logger.log("close");
     try {
       if (readyState == OPEN && !isError) {
         socket.writeByte(0xff);
@@ -151,18 +154,14 @@ public class WebSocket extends EventDispatcher {
   }
   
   private function onSocketConnect(event:Event):void {
-    main.log("connected");
+    logger.log("connected");
 
     if (scheme == "wss") {
-      main.log("starting SSL/TLS");
+      logger.log("starting SSL/TLS");
       tlsSocket.startTLS(rawSocket, host, tlsConfig);
     }
     
     var hostValue:String = host + (port == 80 ? "" : ":" + port);
-    var cookie:String = "";
-    if (main.getCallerHost() == host) {
-      cookie = ExternalInterface.call("function(){return document.cookie}");
-    }
     var key1:String = generateKey();
     var key2:String = generateKey();
     var key3:String = generateKey3();
@@ -184,15 +183,15 @@ public class WebSocket extends EventDispatcher {
       "{6}" +
       "\r\n",
       path, hostValue, origin, cookie, key1, key2, opt);
-    main.log("request header:\n" + req);
+    logger.log("request header:\n" + req);
     socket.writeUTFBytes(req);
-    main.log("sent key3: " + key3);
+    logger.log("sent key3: " + key3);
     writeBytes(key3);
     socket.flush();
   }
 
   private function onSocketClose(event:Event):void {
-    main.log("closed");
+    logger.log("closed");
     readyState = CLOSED;
     this.dispatchEvent(new WebSocketEvent("close"));
   }
@@ -221,7 +220,7 @@ public class WebSocket extends EventDispatcher {
   
   private function onError(message:String):void {
     if (readyState == CLOSED) return;
-    main.error(message);
+    logger.error(message);
     close(readyState != CONNECTING);
   }
 
@@ -240,7 +239,7 @@ public class WebSocket extends EventDispatcher {
         }
         if (headerState == 4) {
           var headerStr:String = readUTFBytes(buffer, 0, pos + 1);
-          main.log("response header:\n" + headerStr);
+          logger.log("response header:\n" + headerStr);
           if (!validateHeader(headerStr)) return;
           removeBufferBefore(pos + 1);
           pos = -1;
@@ -248,7 +247,7 @@ public class WebSocket extends EventDispatcher {
       } else if (headerState == 4) {
         if (pos == 15) {
           var replyDigest:String = readBytes(buffer, 0, 16);
-          main.log("reply digest: " + replyDigest);
+          logger.log("reply digest: " + replyDigest);
           if (replyDigest != expectedDigest) {
             onError("digest doesn't match: " + replyDigest + " != " + expectedDigest);
             return;
@@ -266,12 +265,12 @@ public class WebSocket extends EventDispatcher {
             return;
           }
           var data:String = readUTFBytes(buffer, 1, pos - 1);
-          main.log("received: " + data);
+          logger.log("received: " + data);
           this.dispatchEvent(new WebSocketEvent("message", encodeURIComponent(data)));
           removeBufferBefore(pos + 1);
           pos = -1;
         } else if (pos == 1 && buffer[0] == 0xff && buffer[1] == 0x00) { // closing
-          main.log("received closing packet");
+          logger.log("received closing packet");
           removeBufferBefore(pos + 1);
           pos = -1;
           close();
@@ -435,7 +434,7 @@ public class WebSocket extends EventDispatcher {
   }
   
   private function fatal(message:String):void {
-    main.error(message);
+    logger.error(message);
     throw message;
   }
 
@@ -445,7 +444,7 @@ public class WebSocket extends EventDispatcher {
     for (var i:int = 0; i < bytes.length; ++i) {
       output += bytes.charCodeAt(i).toString() + ", ";
     }
-    main.log(output);
+    logger.log(output);
   }
   
 }
