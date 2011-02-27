@@ -15,7 +15,7 @@ import mx.utils.URLUtil;
 /**
   * Provides JavaScript API of WebSocket.
   */
-public class WebSocketMain extends Sprite {
+public class WebSocketMain extends Sprite implements IWebSocketWrapper{
   
   private var callerUrl:String;
   private var debug:Boolean = false;
