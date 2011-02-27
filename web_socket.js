@@ -275,7 +275,7 @@
    */
   WebSocket.loadFlashPolicyFile = function(url){
     WebSocket.__addTask(function() {
-      WebSocket.__flash.loadFlashPolicyFile(url);
+      WebSocket.__flash.loadManualPolicyFile(url);
     });
   };
 

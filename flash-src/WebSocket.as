@@ -60,7 +60,7 @@ public class WebSocket extends EventDispatcher {
     initNoiseChars();
     this.url = url;
     var m:Array = url.match(/^(\w+):\/\/([^\/:]+)(:(\d+))?(\/.*)?$/);
-    if (!m) main.fatal("SYNTAX_ERR: invalid url: " + url);
+    if (!m) fatal("SYNTAX_ERR: invalid url: " + url);
     this.scheme = m[1];
     this.host = m[2];
     this.port = parseInt(m[4] || "80");
@@ -74,7 +74,7 @@ public class WebSocket extends EventDispatcher {
     
     if (proxyHost != null && proxyPort != 0){
       if (scheme == "wss") {
-        main.fatal("wss with proxy is not supported");
+        fatal("wss with proxy is not supported");
       }
       var proxySocket:RFC2817Socket = new RFC2817Socket();
       proxySocket.setProxyInfo(proxyHost, proxyPort);
@@ -131,7 +131,7 @@ public class WebSocket extends EventDispatcher {
       bytes.writeUTFBytes(data);
       return bytes.length; // not sure whether it should include \x00 and \xff
     } else {
-      main.fatal("invalid state");
+      fatal("invalid state");
       return 0;
     }
   }
@@ -432,6 +432,11 @@ public class WebSocket extends EventDispatcher {
   
   private function randomInt(min:uint, max:uint):uint {
     return min + Math.floor(Math.random() * (Number(max) - min + 1));
+  }
+  
+  private function fatal(message:String):void {
+    main.error(message);
+    throw message;
   }
 
   // for debug

@@ -5,28 +5,33 @@
 
 package {
 
-import bridge.JSBridge;
-
 import flash.display.Sprite;
+import flash.external.ExternalInterface;
 import flash.system.Security;
 import flash.utils.setTimeout;
 
 import mx.utils.URLUtil;
 
+/**
+  * Provides JavaScript API of WebSocket.
+  */
 public class WebSocketMain extends Sprite {
   
   private var callerUrl:String;
   private var debug:Boolean = false;
   private var manualPolicyFileLoaded:Boolean = false;
-  private var jsBridge:JSBridge;
-  private var webSockets:Array;
-  private var eventQueue:Array;
+  private var webSockets:Array = [];
+  private var eventQueue:Array = [];
   
   public function WebSocketMain() {
-    this.jsBridge = new JSBridge(this);
-    webSockets = [];
-    eventQueue = [];
-    jsBridge.flashInitialized();
+    ExternalInterface.addCallback("setCallerUrl", setCallerUrl);
+    ExternalInterface.addCallback("setDebug", setDebug);
+    ExternalInterface.addCallback("create", create);
+    ExternalInterface.addCallback("send", send);
+    ExternalInterface.addCallback("close", close);
+    ExternalInterface.addCallback("loadManualPolicyFile", loadManualPolicyFile);
+    ExternalInterface.addCallback("receiveEvents", receiveEvents);
+    ExternalInterface.call("WebSocket.__onFlashInitialized");
   }
   
   /*************
@@ -64,17 +69,12 @@ public class WebSocketMain extends Sprite {
   
   public function log(message:String):void {
     if (debug) {
-      jsBridge.log(message);
+      ExternalInterface.call("WebSocket.__log", encodeURIComponent("[WebSocket] " + message));
     }
   }
   
   public function error(message:String):void {
-    jsBridge.error(message);
-  }
-  
-  public function fatal(message:String):void {
-    jsBridge.error(message);
-    throw message;
+    ExternalInterface.call("WebSocket.__error", encodeURIComponent("[WebSocket] " + message));
   }
   
   private function parseEvent(event:WebSocketEvent):Object {
@@ -140,8 +140,7 @@ public class WebSocketMain extends Sprite {
    */
   public function processEvents():void {
     if (eventQueue.length == 0) return;
-    var success:Boolean = jsBridge.fireEvent();
-    if (!success) {
+    if (!ExternalInterface.call("WebSocket.__onFlashEvent")) {
       setTimeout(processEvents, 500);
     }
   }
