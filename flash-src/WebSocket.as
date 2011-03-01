@@ -61,12 +61,12 @@ public class WebSocket extends EventDispatcher {
     this.id = id;
     initNoiseChars();
     this.url = url;
-    var m:Array = url.match(/^(\w+):\/\/([^\/:]+)(:(\d+))?(\/.*)?$/);
+    var m:Array = url.match(/^(\w+):\/\/([^\/:]+)(:(\d+))?(\/.*)?(\?.*)?$/);
     if (!m) fatal("SYNTAX_ERR: invalid url: " + url);
     this.scheme = m[1];
     this.host = m[2];
     this.port = parseInt(m[4] || "80");
-    this.path = m[5] || "/";
+    this.path = (m[5] || "/") + (m[6] || "");
     this.origin = origin;
     this.protocol = protocol;
     this.cookie = cookie;
