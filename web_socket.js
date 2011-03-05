@@ -150,7 +150,7 @@
   };
 
   /**
-   * Handle an event from flash.  Do any websocket-specific
+   * Handle an event from Flash.  Do any WebSocket-specific
    * handling before passing the event off to the event handlers.
    * @param {Object} event
    */
@@ -161,11 +161,11 @@
   
     try {
       if (event.type == "open") {
-        this.onopen && this.onopen();
+        if (this.onopen) this.onopen();
       } else if (event.type == "close") {
-        this.onclose && this.onclose();
+        if (this.onclose) this.onclose();
       } else if (event.type == "error") {
-        this.onerror && this.onerror(event);
+        if (this.onerror) this.onerror(event);
       } else if (event.type == "message") {
         if (this.onmessage) {
           var data = decodeURIComponent(event.message);
@@ -179,12 +179,11 @@
           }
           this.onmessage(e);
         }
-        
       } else {
         throw "unknown event type: " + event.type;
       }
     } catch (e) {
-      console.error(e.toString());
+      console.error(e);
     }
   };
   
