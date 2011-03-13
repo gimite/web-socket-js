@@ -160,7 +160,7 @@
   };
   
   WebSocket.prototype.__createSimpleEvent = function(type) {
-    if (window.Event) {
+    if (document.createEvent && window.Event) {
       var event = document.createEvent("Event");
       event.initEvent(type, false, false);
       return event;
@@ -170,7 +170,7 @@
   };
   
   WebSocket.prototype.__createMessageEvent = function(type, data) {
-    if (window.MessageEvent && !window.opera) {
+    if (document.createEvent && window.MessageEvent && !window.opera) {
       var event = document.createEvent("MessageEvent");
       event.initMessageEvent("message", false, false, data, null, null, window, null);
       return event;
