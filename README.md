@@ -2,7 +2,7 @@
 
 Assuming you have Web server (e.g. Apache) running at **http://example.com/** .
 
-1. Download [web_socket.rb](http://github.com/gimite/web-socket-ruby/tree/master).
+1. Download [web-socket-ruby](http://github.com/gimite/web-socket-ruby/tree/master).
 2. Run sample Web Socket server (echo server) in example.com with: (#1)
        $ ruby web-socket-ruby/samples/echo_server.rb example.com 10081
 3. If your server already provides socket policy file at port **843**, modify the file to allow access to port **10081**. Otherwise you can skip this step. See below for details.
@@ -19,7 +19,7 @@ Assuming you have Web server (e.g. Apache) running at **http://example.com/** .
 - Copy swfobject.js, web_socket.js, WebSocketMain.swf to your application directory.
 - Write JavaScript code:
 
-      <!-- Imports JavaScript Libraries. -->
+      <!-- Import JavaScript Libraries. -->
       <script type="text/javascript" src="swfobject.js"></script>
       <script type="text/javascript" src="web_socket.js"></script>
      
