@@ -16,8 +16,9 @@ Assuming you have Web server (e.g. Apache) running at **http://example.com/** .
 
 ## How to use it in your application
 
-1. Copy swfobject.js, web_socket.js, WebSocketMain.swf to your application directory.
-2. Write JavaScript code:
+- Copy swfobject.js, web_socket.js, WebSocketMain.swf to your application directory.
+- Write JavaScript code:
+
       <!-- Imports JavaScript Libraries. -->
       <script type="text/javascript" src="swfobject.js"></script>
       <script type="text/javascript" src="web_socket.js"></script>
@@ -41,7 +42,8 @@ Assuming you have Web server (e.g. Apache) running at **http://example.com/** .
         };
         
       </script>
-3. Put Flash socket policy file to your server unless you use web-socket-ruby or em-websocket as your WebSocket server. See "Flash socket policy file" section below for details.
+
+- Put Flash socket policy file to your server unless you use web-socket-ruby or em-websocket as your WebSocket server. See "Flash socket policy file" section below for details.
 
 
 ## Troubleshooting
