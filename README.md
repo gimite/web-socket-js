@@ -1,4 +1,4 @@
-### How to try
+## How to try the sample
 
 Assuming you have Web server (e.g. Apache) running at **http://example.com/** .
 
@@ -15,7 +15,37 @@ Assuming you have Web server (e.g. Apache) running at **http://example.com/** .
 \#1: First argument of echo_server.rb means that it accepts Web Socket connection from HTML pages in example.com.
 
 
-### Troubleshooting
+## How to use it in your application
+
+1. Copy swfobject.js, web_socket.js, WebSocketMain.swf to your application directory.
+2. Write JavaScript code:
+    <!-- Imports JavaScript Libraries. -->
+    <script type="text/javascript" src="swfobject.js"></script>
+    <script type="text/javascript" src="web_socket.js"></script>
+   
+    <script type="text/javascript">
+      
+      // Let the library know where WebSocketMain.swf is:
+      WebSocket.__swfLocation = "WebSocketMain.swf";
+      
+      // Write your code in the same way as for native WebSocket:
+      var ws = new WebSocket("ws://example.com:10081/");
+      ws.onopen = function() {
+        ws.send("Hello");  // Sends a message.
+      };
+      ws.onmessage = function(e) {
+        // Receives a message.
+        alert(e.data);
+      };
+      ws.onclose = function() {
+        alert("closed");
+      };
+      
+    </script>
+3. Put Flash socket policy file to your server unless you use web-socket-ruby or em-websocket as your WebSocket server. See "Flash socket policy file" section below for details.
+
+
+## Troubleshooting
 
 If it doesn't work, try these:
 
@@ -40,53 +70,58 @@ and use Developer Tools (Chrome/Safari) or Firebug (Firefox) to see if console.l
 
 6. Make sure the port used for WebSocket (10081 in example above) is not blocked by your server/client's firewall.
 
-7. Install debugger version of Flash Player available here to see Flash errors:
-[http://www.adobe.com/support/flashplayer/downloads.html](http://www.adobe.com/support/flashplayer/downloads.html)
+7. Install [debugger version of Flash Player](http://www.adobe.com/support/flashplayer/downloads.html) to see Flash errors.
 
 
-### Supported environments
+## Supported environments
 
 It should work on:
 
 - Google Chrome 4 or later (just uses native implementation)
-- Firefox 3.x, Internet Explorer 8 + Flash Player 10 or later
+- Firefox 3.x, 4.x, Internet Explorer 8, 9 + Flash Player 10 or later
 
 It may or may not work on other browsers such as Safari, Opera or IE 6. Patch for these browsers are appreciated, but I will not work on fixing issues specific to these browsers by myself.
+
+
+## Limitations/differences compared to native WebSocket
+
+- You need some more lines in your JavaScript code. See "How to use it in your application" section above for details.
+- It requires Flash Player 10 or later unless the browser supports native WebSocket.
+- Your server must provide Flash socket policy file, unless you use web-socket-ruby or em-websocket. See "Flash socket policy file" section below for details.
+- It has limited support for Cookies on WebSocket. See "Cookie support" section below for details.
+- It doesn't use proxies specified in browser config. See "Proxy support" section below for details.
 
 
 ### Flash socket policy file
 
 This implementation uses Flash's socket, which means that your server must provide Flash socket policy file to declare the server accepts connections from Flash.
 
-If you use web-socket-ruby available at
-[http://github.com/gimite/web-socket-ruby/tree/master](http://github.com/gimite/web-socket-ruby/tree/master)
-, you don't need anything special, because web-socket-ruby handles Flash socket policy file request. But if you already provide socket policy file at port **843**, you need to modify the file to allow access to Web Socket port, because it precedes what web-socket-ruby provides.
+If you use [web-socket-ruby](http://github.com/gimite/web-socket-ruby/tree/master) or [em-websocket](https://github.com/igrigorik/em-websocket), you don't need anything special, because web-socket-ruby handles Flash socket policy file request. But if you already provide socket policy file at port **843**, you need to modify the file to allow access to Web Socket port, because it precedes what web-socket-ruby provides.
 
-If you use other Web Socket server implementation, you need to provide socket policy file yourself. See
-[http://www.lightsphere.com/dev/articles/flash_socket_policy.html](http://www.lightsphere.com/dev/articles/flash_socket_policy.html)
-for details and sample script to run socket policy file server. node.js implementation is available here:
-[http://github.com/LearnBoost/Socket.IO-node/blob/master/lib/socket.io/transports/flashsocket.js](http://github.com/LearnBoost/Socket.IO-node/blob/master/lib/socket.io/transports/flashsocket.js)
+If you use other Web Socket server implementation, you need to provide socket policy file yourself. See [Setting up A Flash Socket Policy File](http://www.lightsphere.com/dev/articles/flash_socket_policy.html) for details and sample script to run socket policy file server. [node.js implementation is available here](http://github.com/LearnBoost/Socket.IO-node/blob/master/lib/socket.io/transports/flashsocket.js).
 
-Actually, it's still better to provide socket policy file at port 843 even if you use web-socket-ruby. Flash always try to connect to port 843 first, so providing the file at port 843 makes startup faster.
+Actually, it's still better to provide socket policy file at port 843 even if you use web-socket-ruby or em-websocket. Flash always try to connect to port 843 first, so providing the file at port 843 makes startup faster.
 
 
-### Cookie considerations
+### Cookie support
 
-Cookie is sent if Web Socket host is the same as the origin of JavaScript. Otherwise it is not sent, because I don't know way to send right Cookie (which is Cookie of the host of Web Socket, I heard).
+web-socket-js has limited supported for Cookies on WebSocket.
+
+Cookie is sent if Web Socket host is exactly the same as the origin of JavaScript (The port can be different). Otherwise it is not sent, because I don't know way to send right Cookie (which is Cookie of the host of Web Socket, I heard). Also, HttpOnly Cookies are not sent.
 
 Note that it's technically possible that client sends arbitrary string as Cookie and any other headers (by modifying this library for example) once you place Flash socket policy file in your server. So don't trust Cookie and other headers if you allow connection from untrusted origin.
 
 
-### Proxy considerations
+### Proxy support
 
-The WebSocket spec (http://tools.ietf.org/html/draft-hixie-thewebsocketprotocol) specifies instructions for User Agents to support proxied connections by implementing the HTTP CONNECT method.
+[The WebSocket spec](http://tools.ietf.org/html/draft-hixie-thewebsocketprotocol) specifies instructions for User Agents to support proxied connections by implementing the HTTP CONNECT method.
 
 The AS3 Socket class doesn't implement this mechanism, which renders it useless for the scenarios where the user trying to open a socket is behind a proxy. 
 
 The class RFC2817Socket (by Christian Cantrell) effectively lets us implement this, as long as the proxy settings are known and provided by the interface that instantiates the WebSocket. As such, if you want to support proxied conncetions, you'll have to supply this information to the WebSocket constructor when Flash is being used. One way to go about it would be to ask the user for proxy settings information if the initial connection fails.
 
 
-### How to host HTML file and SWF file in different domains
+## How to host HTML file and SWF file in different domains
 
 By default, HTML file and SWF file must be in the same domain. You can follow steps below to allow hosting them in different domain.
 
@@ -97,15 +132,14 @@ By default, HTML file and SWF file must be in the same domain. You can follow st
 3. In JavaScript, set WEB_SOCKET_SWF_LOCATION to URL of your WebSocketMainInsecure.swf.
 
 
-### How to build WebSocketMain.swf
+## How to build WebSocketMain.swf
 
-Install Flex 4 SDK:
-[http://opensource.adobe.com/wiki/display/flexsdk/Download+Flex+4](http://opensource.adobe.com/wiki/display/flexsdk/Download+Flex+4)
+Install [Flex 4 SDK](http://opensource.adobe.com/wiki/display/flexsdk/Download+Flex+4).
 
     $ cd flash-src
     $ ./build.sh
 
 
-### License
+## License
 
 New BSD License.
