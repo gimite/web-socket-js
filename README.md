@@ -2,8 +2,7 @@
 
 Assuming you have Web server (e.g. Apache) running at **http://example.com/** .
 
-1. Download web_socket.rb from:
-  [http://github.com/gimite/web-socket-ruby/tree/master](http://github.com/gimite/web-socket-ruby/tree/master)
+1. Download [web_socket.rb](http://github.com/gimite/web-socket-ruby/tree/master).
 2. Run sample Web Socket server (echo server) in example.com with: (#1)
        $ ruby web-socket-ruby/samples/echo_server.rb example.com 10081
 3. If your server already provides socket policy file at port **843**, modify the file to allow access to port **10081**. Otherwise you can skip this step. See below for details.
@@ -19,29 +18,29 @@ Assuming you have Web server (e.g. Apache) running at **http://example.com/** .
 
 1. Copy swfobject.js, web_socket.js, WebSocketMain.swf to your application directory.
 2. Write JavaScript code:
-    <!-- Imports JavaScript Libraries. -->
-    <script type="text/javascript" src="swfobject.js"></script>
-    <script type="text/javascript" src="web_socket.js"></script>
-   
-    <script type="text/javascript">
-      
-      // Let the library know where WebSocketMain.swf is:
-      WebSocket.__swfLocation = "WebSocketMain.swf";
-      
-      // Write your code in the same way as for native WebSocket:
-      var ws = new WebSocket("ws://example.com:10081/");
-      ws.onopen = function() {
-        ws.send("Hello");  // Sends a message.
-      };
-      ws.onmessage = function(e) {
-        // Receives a message.
-        alert(e.data);
-      };
-      ws.onclose = function() {
-        alert("closed");
-      };
-      
-    </script>
+      <!-- Imports JavaScript Libraries. -->
+      <script type="text/javascript" src="swfobject.js"></script>
+      <script type="text/javascript" src="web_socket.js"></script>
+     
+      <script type="text/javascript">
+        
+        // Let the library know where WebSocketMain.swf is:
+        WebSocket.__swfLocation = "WebSocketMain.swf";
+        
+        // Write your code in the same way as for native WebSocket:
+        var ws = new WebSocket("ws://example.com:10081/");
+        ws.onopen = function() {
+          ws.send("Hello");  // Sends a message.
+        };
+        ws.onmessage = function(e) {
+          // Receives a message.
+          alert(e.data);
+        };
+        ws.onclose = function() {
+          alert("closed");
+        };
+        
+      </script>
 3. Put Flash socket policy file to your server unless you use web-socket-ruby or em-websocket as your WebSocket server. See "Flash socket policy file" section below for details.
 
 
