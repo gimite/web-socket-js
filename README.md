@@ -26,7 +26,7 @@ Assuming you have Web server (e.g. Apache) running at **http://example.com/** .
       <script type="text/javascript">
         
         // Let the library know where WebSocketMain.swf is:
-        WebSocket.__swfLocation = "WebSocketMain.swf";
+        WEB_SOCKET_SWF_LOCATION = "WebSocketMain.swf";
         
         // Write your code in the same way as for native WebSocket:
         var ws = new WebSocket("ws://example.com:10081/");
