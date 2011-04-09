@@ -167,7 +167,7 @@ public class WebSocket extends EventDispatcher {
     var key3:String = generateKey3();
     expectedDigest = getSecurityDigest(key1, key2, key3);
     var opt:String = "";
-    if (protocol) opt += "WebSocket-Protocol: " + protocol + "\r\n";
+    if (protocol) opt += "Sec-WebSocket-Protocol: " + protocol + "\r\n";
     // if caller passes additional headers they must end with "\r\n"
     if (headers) opt += headers;
     
