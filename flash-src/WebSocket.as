@@ -65,7 +65,8 @@ public class WebSocket extends EventDispatcher {
     if (!m) fatal("SYNTAX_ERR: invalid url: " + url);
     this.scheme = m[1];
     this.host = m[2];
-    this.port = parseInt(m[4] || "80");
+    var defaultPort:int = scheme == "wss" ? 443 : 80;
+    this.port = parseInt(m[4]) || defaultPort;
     this.path = (m[5] || "/") + (m[6] || "");
     this.origin = origin;
     this.protocol = protocol;
