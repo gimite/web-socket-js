@@ -162,7 +162,8 @@ public class WebSocket extends EventDispatcher {
       tlsSocket.startTLS(rawSocket, host, tlsConfig);
     }
     
-    var hostValue:String = host + (port == 80 ? "" : ":" + port);
+    var defaultPort:int = scheme == "wss" ? 443 : 80;
+    var hostValue:String = host + (port == defaultPort ? "" : ":" + port);
     var key1:String = generateKey();
     var key2:String = generateKey();
     var key3:String = generateKey3();
