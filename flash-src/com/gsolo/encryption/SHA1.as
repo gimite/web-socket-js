@@ -76,7 +76,7 @@ package com.gsolo.encryption {
 			x[len >> 5] |= 0x80 << (24 - len % 32);
 			x[((len + 64 >> 9) << 4) + 15] = len;
 		
-			var w:Array = Array(80);
+			var w:Array = new Array(80);
 			var a:Number =  1732584193;
 			var b:Number = -271733879;
 			var c:Number = -1732584194;
@@ -136,7 +136,7 @@ package com.gsolo.encryption {
 		  var bkey:Array = str2binb (key);
 		  if (bkey.length > 16) bkey = core_sha1 (bkey, key.length * chrsz);
 		
-		  var ipad:Array = Array(16), opad:Array = Array(16);
+		  var ipad:Array = new Array(16), opad:Array = new Array(16);
 		  for(var i:Number = 0; i < 16; i++) {
 			ipad[i] = bkey[i] ^ 0x36363636;
 			opad[i] = bkey[i] ^ 0x5C5C5C5C;
