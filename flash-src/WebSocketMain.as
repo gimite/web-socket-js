@@ -1,7 +1,7 @@
 // Copyright: Hiroshi Ichikawa <http://gimite.net/en/>
 // License: New BSD License
 // Reference: http://dev.w3.org/html5/websockets/
-// Reference: http://tools.ietf.org/html/draft-hixie-thewebsocketprotocol-76
+// Reference: http://tools.ietf.org/html/draft-ietf-hybi-thewebsocketprotocol-07 
 
 package {
 
@@ -40,6 +40,9 @@ public class WebSocketMain extends Sprite implements IWebSocketLogger{
   
   public function setDebug(val:Boolean):void {
     debug = val;
+    if (val) {
+        log("debug enabled");
+    }
   }
   
   private function loadDefaultPolicyFile(wsUrl:String):void {
