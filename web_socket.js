@@ -142,6 +142,9 @@
     if ("readyState" in flashEvent) {
       this.readyState = flashEvent.readyState;
     }
+    if ("protocol" in flashEvent) {
+      this.protocol = flashEvent.protocol;
+    }
     
     var jsEvent;
     if (flashEvent.type == "open" || flashEvent.type == "error") {

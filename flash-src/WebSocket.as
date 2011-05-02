@@ -120,6 +120,10 @@ public class WebSocket extends EventDispatcher {
   public function getReadyState():int {
     return this.readyState;
   }
+
+  public function getProtocol():String {
+    return this.protocol;
+  }
   
   public function send(encData:String):int {
     var data:String = decodeURIComponent(encData);
@@ -324,10 +328,14 @@ public class WebSocket extends EventDispatcher {
       onError("origin doesn't match: '" + resOrigin + "' != '" + origin + "'");
       return false;
     }
-    if (protocol && header["sec-websocket-protocol"] != protocol) {
-      onError("protocol doesn't match: '" +
-        header["websocket-protocol"] + "' != '" + protocol + "'");
-      return false;
+    if (protocol) {
+      if (protocol.split(",").indexOf(header["sec-websocket-protocol"]) >= 0) {
+        protocol = header["sec-websocket-protocol"];
+      } else {
+        onError("protocol doesn't match: '" +
+          header["websocket-protocol"] + "' not in '" + protocol + "'");
+        return false;
+      }
     }
     return true;
   }

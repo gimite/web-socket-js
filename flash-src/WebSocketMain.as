@@ -70,6 +70,7 @@ public class WebSocketMain extends Sprite implements IWebSocketLogger{
     eventObj.type = event.type;
     eventObj.webSocketId = webSocket.getId();
     eventObj.readyState = webSocket.getReadyState();
+    eventObj.protocol = webSocket.getProtocol();
     if (event.message !== null) {
       eventObj.message = event.message;
     }
