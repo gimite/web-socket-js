@@ -153,10 +153,15 @@ public class WebSocket extends EventDispatcher {
         return 0;
       }
         
-      var mask:uint = 0; // Null mask
-      //var mask:uint = randomInt(0, 4294967295);
-      data.writeUnsignedInt(mask);
-      data.writeUTFBytes(raw_str);
+      // Generate a mask
+      var mask:Array = new Array(4);
+      for (var i:int = 0; i < 4; i++) {
+        mask[i] = randomInt(0, 255);
+        data.writeByte(mask[i]);
+      }
+      for (i = 0; i < raw_str.length; i++) {
+        data.writeByte(mask[i%4] ^ raw_str.charCodeAt(i));
+      }
 
       socket.writeBytes(data);
       socket.flush();
