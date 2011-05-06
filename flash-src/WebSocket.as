@@ -42,7 +42,8 @@ public class WebSocket extends EventDispatcher {
   private var port:uint;
   private var path:String;
   private var origin:String;
-  private var protocol:String;
+  private var requestedProtocols:Array;
+  private var acceptedProtocol:String;
   private var buffer:ByteArray = new ByteArray();
   private var headerState:int = 0;
   private var readyState:int = CONNECTING;
@@ -53,7 +54,7 @@ public class WebSocket extends EventDispatcher {
   private var logger:IWebSocketLogger;
 
   public function WebSocket(
-      id:int, url:String, protocol:String, origin:String,
+      id:int, url:String, protocols:Array, origin:String,
       proxyHost:String, proxyPort:int,
       cookie:String, headers:String,
       logger:IWebSocketLogger) {
@@ -69,7 +70,7 @@ public class WebSocket extends EventDispatcher {
     this.port = parseInt(m[4]) || defaultPort;
     this.path = (m[5] || "/") + (m[6] || "");
     this.origin = origin;
-    this.protocol = protocol;
+    this.requestedProtocols = protocols;
     this.cookie = cookie;
     // if present and not the empty string, headers MUST end with \r\n
     // headers should be zero or more complete lines, for example
@@ -121,8 +122,8 @@ public class WebSocket extends EventDispatcher {
     return this.readyState;
   }
 
-  public function getProtocol():String {
-    return this.protocol;
+  public function getAcceptedProtocol():String {
+    return this.acceptedProtocol;
   }
   
   public function send(encData:String):int {
@@ -173,7 +174,9 @@ public class WebSocket extends EventDispatcher {
     var key3:String = generateKey3();
     expectedDigest = getSecurityDigest(key1, key2, key3);
     var opt:String = "";
-    if (protocol) opt += "Sec-WebSocket-Protocol: " + protocol + "\r\n";
+    if (requestedProtocols.length > 0) {
+      opt += "Sec-WebSocket-Protocol: " + requestedProtocols.join(",") + "\r\n";
+    }
     // if caller passes additional headers they must end with "\r\n"
     if (headers) opt += headers;
     
@@ -328,12 +331,11 @@ public class WebSocket extends EventDispatcher {
       onError("origin doesn't match: '" + resOrigin + "' != '" + origin + "'");
       return false;
     }
-    if (protocol) {
-      if (protocol.split(",").indexOf(header["sec-websocket-protocol"]) >= 0) {
-        protocol = header["sec-websocket-protocol"];
-      } else {
+    if (requestedProtocols.length > 0) {
+      acceptedProtocol = header["sec-websocket-protocol"];
+      if (requestedProtocols.indexOf(acceptedProtocol) < 0) {
         onError("protocol doesn't match: '" +
-          header["websocket-protocol"] + "' not in '" + protocol + "'");
+          acceptedProtocol + "' not in '" + requestedProtocols.join(",") + "'");
         return false;
       }
     }
