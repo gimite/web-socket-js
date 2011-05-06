@@ -134,20 +134,24 @@ public class WebSocket extends EventDispatcher {
   public function send(encData:String):int {
     var raw_str:String = decodeURIComponent(encData);
     var data:ByteArray = new ByteArray();
+    data.writeUTFBytes(raw_str);
+    var plength:uint = data.length;
+
     if (readyState == OPEN) {
       // TODO: binary API support
-      data.writeByte(0x80 | 0x01); // FIN + text opcode
+      var header:ByteArray = new ByteArray();
 
-      var plength:uint = raw_str.length;
+      header.writeByte(0x80 | 0x01); // FIN + text opcode
+
       if (plength <= 125) {
-        data.writeByte(0x80 | plength); // Masked + length
+        header.writeByte(0x80 | plength); // Masked + length
       } else if (plength > 125 && plength < 65536) {
-        data.writeByte(0x80 | 126);     // Masked + 126
-        data.writeShort(plength);
+        header.writeByte(0x80 | 126);     // Masked + 126
+        header.writeShort(plength);
       } else if (plength >= 65536 && plength < 4294967296) {
-        data.writeByte(0x80 | 127);     // Masked + 127
-        data.writeUnsignedInt(0); // zero high order bits
-        data.writeUnsignedInt(plength);
+        header.writeByte(0x80 | 127);     // Masked + 127
+        header.writeUnsignedInt(0); // zero high order bits
+        header.writeUnsignedInt(plength);
       } else {
         fatal("Send frame size too large");
         return 0;
@@ -157,19 +161,19 @@ public class WebSocket extends EventDispatcher {
       var mask:Array = new Array(4);
       for (var i:int = 0; i < 4; i++) {
         mask[i] = randomInt(0, 255);
-        data.writeByte(mask[i]);
+        header.writeByte(mask[i]);
       }
-      for (i = 0; i < raw_str.length; i++) {
-        data.writeByte(mask[i%4] ^ raw_str.charCodeAt(i));
+      for (i = 0; i < data.length; i++) {
+        data[i] = mask[i%4] ^ data[i];
       }
 
+      socket.writeBytes(header);
       socket.writeBytes(data);
       socket.flush();
       logger.log("sent: " + data);
       return -1;
     } else if (readyState == CLOSING || readyState == CLOSED) {
-      data.writeUTFBytes(raw_str);
-      return data.length; // not sure whether it should include \x00 and \xff
+      return plength;
     } else {
       fatal("invalid state");
       return 0;
@@ -253,7 +257,6 @@ public class WebSocket extends EventDispatcher {
 
     SHA1.b64pad = "=";
     expectedDigest = SHA1.b64_sha1(key + GUID);
-    logger.error("expectedDigest: " + expectedDigest);
 
     var opt:String = "";
     if (protocol) opt += "Sec-WebSocket-Protocol: " + protocol + "\r\n";
