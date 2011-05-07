@@ -26,24 +26,29 @@
   /**
    * This class represents a faux web socket.
    * @param {string} url
-   * @param {string} protocol
+   * @param {array or string} protocols
    * @param {string} proxyHost
    * @param {int} proxyPort
    * @param {string} headers
    */
-  WebSocket = function(url, protocol, proxyHost, proxyPort, headers) {
+  WebSocket = function(url, protocols, proxyHost, proxyPort, headers) {
     var self = this;
     self.__id = WebSocket.__nextId++;
     WebSocket.__instances[self.__id] = self;
     self.readyState = WebSocket.CONNECTING;
     self.bufferedAmount = 0;
     self.__events = {};
+    if (!protocols) {
+      protocols = [];
+    } else if (typeof protocols == "string") {
+      protocols = [protocols];
+    }
     // Uses setTimeout() to make sure __createFlash() runs after the caller sets ws.onopen etc.
     // Otherwise, when onopen fires immediately, onopen is called before it is set.
     setTimeout(function() {
       WebSocket.__addTask(function() {
         WebSocket.__flash.create(
-            self.__id, url, protocol, proxyHost || null, proxyPort || 0, headers || null);
+            self.__id, url, protocols, proxyHost || null, proxyPort || 0, headers || null);
       });
     }, 0);
   };
