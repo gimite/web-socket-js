@@ -3,7 +3,7 @@
 Assuming you have Web server (e.g. Apache) running at **http://example.com/** .
 
 1. Download [web-socket-ruby](http://github.com/gimite/web-socket-ruby/tree/master).
-2. Run sample Web Socket server (echo server) in example.com with: (#1)
+2. Run sample Web Socket server (echo server) in example.com with: (#1)<br>
 ```
 $ ruby web-socket-ruby/samples/echo_server.rb example.com 10081
 ```
