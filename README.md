@@ -19,29 +19,31 @@ Assuming you have Web server (e.g. Apache) running at **http://example.com/** .
 - Copy swfobject.js, web_socket.js, WebSocketMain.swf to your application directory.
 - Write JavaScript code:
 
-      <!-- Import JavaScript Libraries. -->
-      <script type="text/javascript" src="swfobject.js"></script>
-      <script type="text/javascript" src="web_socket.js"></script>
-     
-      <script type="text/javascript">
-        
-        // Let the library know where WebSocketMain.swf is:
-        WEB_SOCKET_SWF_LOCATION = "WebSocketMain.swf";
-        
-        // Write your code in the same way as for native WebSocket:
-        var ws = new WebSocket("ws://example.com:10081/");
-        ws.onopen = function() {
-          ws.send("Hello");  // Sends a message.
-        };
-        ws.onmessage = function(e) {
-          // Receives a message.
-          alert(e.data);
-        };
-        ws.onclose = function() {
-          alert("closed");
-        };
-        
-      </script>
+```html
+<!-- Import JavaScript Libraries. -->
+<script type="text/javascript" src="swfobject.js"></script>
+<script type="text/javascript" src="web_socket.js"></script>
+
+<script type="text/javascript">
+  
+  // Let the library know where WebSocketMain.swf is:
+  WEB_SOCKET_SWF_LOCATION = "WebSocketMain.swf";
+  
+  // Write your code in the same way as for native WebSocket:
+  var ws = new WebSocket("ws://example.com:10081/");
+  ws.onopen = function() {
+    ws.send("Hello");  // Sends a message.
+  };
+  ws.onmessage = function(e) {
+    // Receives a message.
+    alert(e.data);
+  };
+  ws.onclose = function() {
+    alert("closed");
+  };
+  
+</script>
+```
 
 - Put Flash socket policy file to your server unless you use web-socket-ruby or em-websocket as your WebSocket server. See "Flash socket policy file" section below for details.
 
