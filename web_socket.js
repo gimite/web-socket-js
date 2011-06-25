@@ -12,7 +12,7 @@
     console = {log: function(){ }, error: function(){ }};
   }
   
-  if (!swfobject.hasFlashPlayerVersion("10.0.0")) {
+  if (!swfobject.getFlashPlayerVersion().major >= 10) {
     console.error("Flash Player >= 10.0.0 is required.");
     return;
   }
