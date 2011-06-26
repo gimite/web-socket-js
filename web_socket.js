@@ -226,6 +226,17 @@
       console.error("[WebSocket] set WEB_SOCKET_SWF_LOCATION to location of WebSocketMain.swf");
       return;
     }
+    if (!WEB_SOCKET_SWF_LOCATION.match(/(^|\/)WebSocketMainInsecure\.swf(\?.*)?$/) &&
+        WEB_SOCKET_SWF_LOCATION.match(/^\w+:\/\/([^\/]+)/)) {
+      var swfHost = RegExp.$1;
+      if (location.host != swfHost) {
+        console.error(
+            "[WebSocket] You must host HTML and WebSocketMain.swf in the same host " +
+            "('" + location.host + "' != '" + swfHost + "'). " +
+            "See also 'How to host HTML file and SWF file in different domains' section " +
+            "in README.md.");
+      }
+    }
     var container = document.createElement("div");
     container.id = "webSocketContainer";
     // Hides Flash box. We cannot use display: none or visibility: hidden because it prevents
