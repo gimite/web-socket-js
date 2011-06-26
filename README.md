@@ -69,13 +69,15 @@ and use Developer Tools (Chrome/Safari) or Firebug (Firefox) to see if console.l
 
 3. Make sure you do NOT open your HTML page as local file e.g. file:///.../sample.html. web-socket-js doesn't work on local file. Open it via Web server e.g. http:///.../sample.html.
 
-4. If you are NOT using web-socket-ruby or em-websocket as your WebSocket server, you need to place Flash socket policy file on your server. See "Flash socket policy file" section below for details.
+4. Make sure you host your HTML page and WebSocketMain.swf in the same domain. Otherwise, see "How to host HTML file and SWF file in different domains" section.
 
-5. Check if sample.html bundled with web-socket-js works.
+5. If you are NOT using web-socket-ruby or em-websocket as your WebSocket server, you need to place Flash socket policy file on your server. See "Flash socket policy file" section below for details.
 
-6. Make sure the port used for WebSocket (10081 in example above) is not blocked by your server/client's firewall.
+6. Check if sample.html bundled with web-socket-js works.
 
-7. Install [debugger version of Flash Player](http://www.adobe.com/support/flashplayer/downloads.html) to see Flash errors.
+7. Make sure the port used for WebSocket (10081 in example above) is not blocked by your server/client's firewall.
+
+8. Install [debugger version of Flash Player](http://www.adobe.com/support/flashplayer/downloads.html) to see Flash errors.
 
 
 ## Supported environments
