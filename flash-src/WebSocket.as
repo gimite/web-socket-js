@@ -208,9 +208,11 @@ public class WebSocket extends EventDispatcher {
   private function onSocketIoError(event:IOErrorEvent):void {
     var message:String;
     if (readyState == CONNECTING) {
-      message = "cannot connect to Web Socket server at " + url + " (IoError)";
+      message = "cannot connect to Web Socket server at " + url + " (IoError: " + event.text + ")";
     } else {
-      message = "error communicating with Web Socket server at " + url + " (IoError)";
+      message =
+          "error communicating with Web Socket server at " + url +
+          " (IoError: " + event.text + ")";
     }
     onError(message);
   }
@@ -219,10 +221,12 @@ public class WebSocket extends EventDispatcher {
     var message:String;
     if (readyState == CONNECTING) {
       message =
-          "cannot connect to Web Socket server at " + url + " (SecurityError)\n" +
+          "cannot connect to Web Socket server at " + url + " (SecurityError: " + event.text + ")\n" +
           "make sure the server is running and Flash socket policy file is correctly placed";
     } else {
-      message = "error communicating with Web Socket server at " + url + " (SecurityError)";
+      message =
+          "error communicating with Web Socket server at " + url +
+          " (SecurityError: " + event.text + ")";
     }
     onError(message);
   }
