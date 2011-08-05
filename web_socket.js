@@ -6,19 +6,25 @@
 (function() {
   
   if (window.WebSocket) return;
-
-  var console = window.console;
-  if (!console || !console.log || !console.error) {
-    console = {log: function(){ }, error: function(){ }};
+  
+  if (!window.WebSocketLogger || !window.WebSocketLogger.log || !window.WebSocketLogger.error) {
+    var temp_console = window.console;
+    if (!temp_console || !temp_console.log || !temp_console.error) {
+      temp_console = {log: function(){ }, error: function(){ }};
+    }
+    window.WebSocketLogger = {
+      log:   function(msg) { if (window.WEB_SOCKET_DEBUG) temp_console.log(msg)   },
+      error: function(msg) { if (window.WEB_SOCKET_DEBUG) temp_console.error(msg) }
+    }
   }
   
   // swfobject.hasFlashPlayerVersion("10.0.0") doesn't work with Gnash.
   if (!swfobject.getFlashPlayerVersion().major >= 10) {
-    console.error("Flash Player >= 10.0.0 is required.");
+    window.WebSocketLogger.error("Flash Player >= 10.0.0 is required.");
     return;
   }
   if (location.protocol == "file:") {
-    console.error(
+    window.WebSocketLogger.error(
       "WARNING: web-socket-js doesn't work in file:///... URL " +
       "unless you set Flash Security Settings properly. " +
       "Open the page via Web server i.e. http://...");
@@ -223,14 +229,14 @@
       window.WEB_SOCKET_SWF_LOCATION = WebSocket.__swfLocation;
     }
     if (!window.WEB_SOCKET_SWF_LOCATION) {
-      console.error("[WebSocket] set WEB_SOCKET_SWF_LOCATION to location of WebSocketMain.swf");
+      window.WebSocketLogger.error("[WebSocket] set WEB_SOCKET_SWF_LOCATION to location of WebSocketMain.swf");
       return;
     }
     if (!WEB_SOCKET_SWF_LOCATION.match(/(^|\/)WebSocketMainInsecure\.swf(\?.*)?$/) &&
         WEB_SOCKET_SWF_LOCATION.match(/^\w+:\/\/([^\/]+)/)) {
       var swfHost = RegExp.$1;
       if (location.host != swfHost) {
-        console.error(
+        window.WebSocketLogger.error(
             "[WebSocket] You must host HTML and WebSocketMain.swf in the same host " +
             "('" + location.host + "' != '" + swfHost + "'). " +
             "See also 'How to host HTML file and SWF file in different domains' section " +
@@ -270,7 +276,7 @@
       null,
       function(e) {
         if (!e.success) {
-          console.error("[WebSocket] swfobject.embedSWF failed");
+          window.WebSocketLogger.error("[WebSocket] swfobject.embedSWF failed");
         }
       });
   };
@@ -307,7 +313,7 @@
           WebSocket.__instances[events[i].webSocketId].__handleEvent(events[i]);
         }
       } catch (e) {
-        console.error(e);
+        window.WebSocketLogger.error(e);
       }
     }, 0);
     return true;
@@ -315,12 +321,12 @@
   
   // Called by Flash.
   WebSocket.__log = function(message) {
-    console.log(decodeURIComponent(message));
+    window.WebSocketLogger.log(decodeURIComponent(message));
   };
   
   // Called by Flash.
   WebSocket.__error = function(message) {
-    console.error(decodeURIComponent(message));
+    window.WebSocketLogger.error(decodeURIComponent(message));
   };
   
   WebSocket.__addTask = function(task) {
