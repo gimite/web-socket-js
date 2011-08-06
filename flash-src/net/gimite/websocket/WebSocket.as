@@ -3,7 +3,7 @@
 // Reference: http://dev.w3.org/html5/websockets/
 // Reference: http://tools.ietf.org/html/draft-hixie-thewebsocketprotocol-76
 
-package {
+package net.gimite.websocket {
 
 import com.adobe.net.proxies.RFC2817Socket;
 import com.gsolo.encryption.MD5;

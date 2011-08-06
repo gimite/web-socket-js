@@ -3,7 +3,7 @@
 // Reference: http://dev.w3.org/html5/websockets/
 // Reference: http://tools.ietf.org/html/draft-hixie-thewebsocketprotocol-76
 
-package {
+package net.gimite.websocket {
 
 import flash.display.Sprite;
 import flash.external.ExternalInterface;

@@ -1,4 +1,4 @@
-package {
+package net.gimite.websocket {
 
 import flash.events.Event;
 
