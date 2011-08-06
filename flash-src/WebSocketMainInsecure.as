@@ -5,7 +5,7 @@
 
 package {
 
-import flash.system.*;
+import flash.system.Security;
 
 public class WebSocketMainInsecure extends WebSocketMain {
 
