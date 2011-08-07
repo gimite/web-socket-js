@@ -18,7 +18,7 @@
   }
   
   // swfobject.hasFlashPlayerVersion("10.0.0") doesn't work with Gnash.
-  if (!swfobject.getFlashPlayerVersion().major >= 10) {
+  if (swfobject.getFlashPlayerVersion().major < 10) {
     logger.error("Flash Player >= 10.0.0 is required.");
     return;
   }
