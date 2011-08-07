@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# A script to build WebSocketMain.swf and WebSocketMainInsecure.zip.
+
 # You need Flex 4 SDK:
 # http://opensource.adobe.com/wiki/display/flexsdk/Download+Flex+4
 
