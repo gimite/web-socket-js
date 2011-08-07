@@ -4,21 +4,26 @@
 // Reference: http://tools.ietf.org/html/draft-hixie-thewebsocketprotocol
 
 (function() {
-
+  
   if (window.WebSocket && !window.WEB_SOCKET_FORCE_FLASH) return;
-
-  var console = window.console;
-  if (!console || !console.log || !console.error) {
-    console = {log: function(){ }, error: function(){ }};
+  
+  var logger;
+  if (window.WEB_SOCKET_LOGGER) {
+    logger = WEB_SOCKET_LOGGER;
+  } else if (window.console && window.console.log && window.console.error) {
+    // In some environment, console is defined but console.log or console.error is missing.
+    logger = window.console;
+  } else {
+    logger = {log: function(){ }, error: function(){ }};
   }
   
   // swfobject.hasFlashPlayerVersion("10.0.0") doesn't work with Gnash.
   if (!swfobject.getFlashPlayerVersion().major >= 10) {
-    console.error("Flash Player >= 10.0.0 is required.");
+    logger.error("Flash Player >= 10.0.0 is required.");
     return;
   }
   if (location.protocol == "file:") {
-    console.error(
+    logger.error(
       "WARNING: web-socket-js doesn't work in file:///... URL " +
       "unless you set Flash Security Settings properly. " +
       "Open the page via Web server i.e. http://...");
@@ -223,7 +228,7 @@
       window.WEB_SOCKET_SWF_LOCATION = WebSocket.__swfLocation;
     }
     if (!window.WEB_SOCKET_SWF_LOCATION) {
-      console.error("[WebSocket] set WEB_SOCKET_SWF_LOCATION to location of WebSocketMain.swf");
+      logger.error("[WebSocket] set WEB_SOCKET_SWF_LOCATION to location of WebSocketMain.swf");
       return;
     }
     if (!window.WEB_SOCKET_SUPPRESS_CROSS_DOMAIN_SWF_ERROR &&
@@ -231,7 +236,7 @@
         WEB_SOCKET_SWF_LOCATION.match(/^\w+:\/\/([^\/]+)/)) {
       var swfHost = RegExp.$1;
       if (location.host != swfHost) {
-        console.error(
+        logger.error(
             "[WebSocket] You must host HTML and WebSocketMain.swf in the same host " +
             "('" + location.host + "' != '" + swfHost + "'). " +
             "See also 'How to host HTML file and SWF file in different domains' section " +
@@ -272,7 +277,7 @@
       null,
       function(e) {
         if (!e.success) {
-          console.error("[WebSocket] swfobject.embedSWF failed");
+          logger.error("[WebSocket] swfobject.embedSWF failed");
         }
       });
   };
@@ -309,7 +314,7 @@
           WebSocket.__instances[events[i].webSocketId].__handleEvent(events[i]);
         }
       } catch (e) {
-        console.error(e);
+        logger.error(e);
       }
     }, 0);
     return true;
@@ -317,12 +322,12 @@
   
   // Called by Flash.
   WebSocket.__log = function(message) {
-    console.log(decodeURIComponent(message));
+    logger.log(decodeURIComponent(message));
   };
   
   // Called by Flash.
   WebSocket.__error = function(message) {
-    console.error(decodeURIComponent(message));
+    logger.error(decodeURIComponent(message));
   };
   
   WebSocket.__addTask = function(task) {
