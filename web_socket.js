@@ -226,7 +226,8 @@
       console.error("[WebSocket] set WEB_SOCKET_SWF_LOCATION to location of WebSocketMain.swf");
       return;
     }
-    if (!WEB_SOCKET_SWF_LOCATION.match(/(^|\/)WebSocketMainInsecure\.swf(\?.*)?$/) &&
+    if (!window.WEB_SOCKET_SUPPRESS_CROSS_DOMAIN_SWF_ERROR &&
+        !WEB_SOCKET_SWF_LOCATION.match(/(^|\/)WebSocketMainInsecure\.swf(\?.*)?$/) &&
         WEB_SOCKET_SWF_LOCATION.match(/^\w+:\/\/([^\/]+)/)) {
       var swfHost = RegExp.$1;
       if (location.host != swfHost) {
@@ -234,7 +235,8 @@
             "[WebSocket] You must host HTML and WebSocketMain.swf in the same host " +
             "('" + location.host + "' != '" + swfHost + "'). " +
             "See also 'How to host HTML file and SWF file in different domains' section " +
-            "in README.md.");
+            "in README.md. If you use WebSocketMainInsecure.swf, you can suppress this message " +
+            "by WEB_SOCKET_SUPPRESS_CROSS_DOMAIN_SWF_ERROR = true;");
       }
     }
     var container = document.createElement("div");
