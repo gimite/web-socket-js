@@ -54,7 +54,7 @@
          strict="true"
          accessible="false"
          fork="true"
-         static-link-runtime-shared-libraries="true">
+         static-link-runtime-shared-libraries="false">
     <optimize>true</optimize>
     <raw-metadata></raw-metadata>
     <include-sources  dir="." includes="**/*.as"/>
