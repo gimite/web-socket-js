@@ -1,3 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+
 <!--
   Ant build file which provides Yet another way (other than build.sh) to build SWF files.
   
@@ -5,7 +7,6 @@
   for your environment.
 -->
 
-<?xml version="1.0" encoding="utf-8"?>
 <project name="ant" basedir="." default="swf">
 
 <property file="build.properties" /><!-- set sdk -->
