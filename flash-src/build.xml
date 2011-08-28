@@ -9,15 +9,14 @@
 
 <project name="ant" basedir="." default="swf">
 
-<property file="build.properties" /><!-- set sdk -->
-<echo message="Using SDK version: ${FLEX_HOME}" />
+<property file="build.properties"/><!-- set sdk -->
+<echo message="Using SDK version: ${FLEX_HOME}"/>
 <!-- do not change next 2 lines, it adds needed task to ant -->
 <property name="FLEXTASKS" value="${FLEX_HOME}/ant/lib/flexTasks.jar"/>
 <taskdef resource="flexTasks.tasks" classpath="${FLEXTASKS}"/>
 
 <target name="swf">
-  <delete file="../WebSocketMain.swf"/>
-  <mxmlc file="net/gimite/websocket/WebSocketMain.as"
+  <mxmlc file="src/net/gimite/websocket/WebSocketMain.as"
          output="../WebSocketMain.swf"
          incremental="false"
          strict="true"
@@ -27,13 +26,13 @@
     <optimize>true</optimize>
     <target-player>10</target-player>
     <raw-metadata></raw-metadata>
-    <source-path path-element="."/>
+    <source-path path-element="src"/>
+    <source-path path-element="third-party"/>
   </mxmlc>
 </target>
 
 <target name="swfInsecure">
-  <delete file="../WebSocketMainInsecure.swf" />
-  <mxmlc file="net/gimite/websocket/WebSocketMainInsecure.as"
+  <mxmlc file="src/net/gimite/websocket/WebSocketMainInsecure.as"
          output="../WebSocketMainInsecure.swf"
          incremental="false"
          strict="true"
@@ -43,12 +42,13 @@
     <optimize>true</optimize>
     <target-player>10</target-player>
     <raw-metadata></raw-metadata>
-    <source-path path-element="."/>
+    <source-path path-element="src"/>
+    <source-path path-element="third-party"/>
   </mxmlc>
 </target>
 
-<target name="swc" ><!-- for pure .as -->
-  <delete file="../WebSocket.swc" />
+<!-- for pure .as -->
+<target name="swc" depends="swcWithoutDependencies,dependencies">
   <compc output="../WebSocket.swc"
          incremental="false"
          strict="true"
@@ -57,8 +57,40 @@
          static-link-runtime-shared-libraries="false">
     <optimize>true</optimize>
     <raw-metadata></raw-metadata>
-    <include-sources  dir="." includes="**/*.as"/>
-    <source-path path-element="."/>
+    <include-libraries dir=".." append="true" >
+      <include name="WebSocketWithoutDependencies.swc"/>
+      <include name="WebSocketDependencies.swc"/>
+    </include-libraries>
+  </compc>
+</target>
+
+<!-- for pure .as where you want to link your own version of third-party libraries -->
+<target name="swcWithoutDependencies" depends="dependencies">
+  <compc output="../WebSocketWithoutDependencies.swc"
+         incremental="false"
+         strict="true"
+         accessible="false"
+         fork="true"
+         static-link-runtime-shared-libraries="false">
+    <optimize>true</optimize>
+    <raw-metadata></raw-metadata>
+    <source-path path-element="src"/>
+    <include-sources dir="." includes="**/*.as"/>
+    <external-library-path file="../WebSocketDependencies.swc" append="true"/>
+  </compc>
+</target>
+
+<target name="dependencies">
+  <compc output="../WebSocketDependencies.swc"
+         incremental="false"
+         strict="true"
+         accessible="false"
+         fork="true"
+         static-link-runtime-shared-libraries="false">
+    <optimize>true</optimize>
+    <raw-metadata></raw-metadata>
+    <source-path path-element="third-party"/>
+    <include-sources dir="." includes="**/*.as"/>
   </compc>
 </target>
 
