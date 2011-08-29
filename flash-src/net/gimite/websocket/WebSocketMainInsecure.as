@@ -3,9 +3,9 @@
 // Reference: http://dev.w3.org/html5/websockets/
 // Reference: http://tools.ietf.org/html/draft-ietf-hybi-thewebsocketprotocol-07
 
-package {
+package net.gimite.websocket {
 
-import flash.system.*;
+import flash.system.Security;
 
 public class WebSocketMainInsecure extends WebSocketMain {
 

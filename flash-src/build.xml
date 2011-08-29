@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  Ant build file which provides Yet another way (other than build.sh) to build SWF files.
+  
+  You need to copy build.properties.sample to build.properties and change FLEX_HOME
+  for your environment.
+-->
+
+<project name="ant" basedir="." default="swf">
+
+<property file="build.properties" /><!-- set sdk -->
+<echo message="Using SDK version: ${FLEX_HOME}" />
+<!-- do not change next 2 lines, it adds needed task to ant -->
+<property name="FLEXTASKS" value="${FLEX_HOME}/ant/lib/flexTasks.jar"/>
+<taskdef resource="flexTasks.tasks" classpath="${FLEXTASKS}"/>
+
+<target name="swf">
+  <delete file="../WebSocketMain.swf"/>
+  <mxmlc file="net/gimite/websocket/WebSocketMain.as"
+         output="../WebSocketMain.swf"
+         incremental="false"
+         strict="true"
+         accessible="false"
+         fork="true"
+         static-link-runtime-shared-libraries="true">
+    <optimize>true</optimize>
+    <target-player>10</target-player>
+    <raw-metadata></raw-metadata>
+    <source-path path-element="."/>
+  </mxmlc>
+</target>
+
+<target name="swfInsecure">
+  <delete file="../WebSocketMainInsecure.swf" />
+  <mxmlc file="net/gimite/websocket/WebSocketMainInsecure.as"
+         output="../WebSocketMainInsecure.swf"
+         incremental="false"
+         strict="true"
+         accessible="false"
+         fork="true"
+         static-link-runtime-shared-libraries="true">
+    <optimize>true</optimize>
+    <target-player>10</target-player>
+    <raw-metadata></raw-metadata>
+    <source-path path-element="."/>
+  </mxmlc>
+</target>
+
+<target name="swc" ><!-- for pure .as -->
+  <delete file="../WebSocket.swc" />
+  <compc output="../WebSocket.swc"
+         incremental="false"
+         strict="true"
+         accessible="false"
+         fork="true"
+         static-link-runtime-shared-libraries="false">
+    <optimize>true</optimize>
+    <raw-metadata></raw-metadata>
+    <include-sources  dir="." includes="**/*.as"/>
+    <source-path path-element="."/>
+  </compc>
+</target>
+
+</project>
+    

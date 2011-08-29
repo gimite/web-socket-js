@@ -3,8 +3,10 @@
 Assuming you have Web server (e.g. Apache) running at **http://example.com/** .
 
 1. Download [web-socket-ruby](http://github.com/gimite/web-socket-ruby/tree/master).
-2. Run sample Web Socket server (echo server) in example.com with: (#1)
-       $ ruby web-socket-ruby/samples/echo_server.rb example.com 10081
+2. Run sample Web Socket server (echo server) in example.com with: (#1)<br>
+```
+$ ruby web-socket-ruby/samples/echo_server.rb example.com 10081
+```
 3. If your server already provides socket policy file at port **843**, modify the file to allow access to port **10081**. Otherwise you can skip this step. See below for details.
 4. Publish the web-socket-js directory with your Web server (e.g. put it in ~/public_html).
 5. Change ws://localhost:10081 to **ws://example.com:10081** in sample.html.
@@ -19,29 +21,31 @@ Assuming you have Web server (e.g. Apache) running at **http://example.com/** .
 - Copy swfobject.js, web_socket.js, WebSocketMain.swf to your application directory.
 - Write JavaScript code:
 
-      <!-- Import JavaScript Libraries. -->
-      <script type="text/javascript" src="swfobject.js"></script>
-      <script type="text/javascript" src="web_socket.js"></script>
-     
-      <script type="text/javascript">
-        
-        // Let the library know where WebSocketMain.swf is:
-        WEB_SOCKET_SWF_LOCATION = "WebSocketMain.swf";
-        
-        // Write your code in the same way as for native WebSocket:
-        var ws = new WebSocket("ws://example.com:10081/");
-        ws.onopen = function() {
-          ws.send("Hello");  // Sends a message.
-        };
-        ws.onmessage = function(e) {
-          // Receives a message.
-          alert(e.data);
-        };
-        ws.onclose = function() {
-          alert("closed");
-        };
-        
-      </script>
+```html
+<!-- Import JavaScript Libraries. -->
+<script type="text/javascript" src="swfobject.js"></script>
+<script type="text/javascript" src="web_socket.js"></script>
+
+<script type="text/javascript">
+  
+  // Let the library know where WebSocketMain.swf is:
+  WEB_SOCKET_SWF_LOCATION = "WebSocketMain.swf";
+  
+  // Write your code in the same way as for native WebSocket:
+  var ws = new WebSocket("ws://example.com:10081/");
+  ws.onopen = function() {
+    ws.send("Hello");  // Sends a message.
+  };
+  ws.onmessage = function(e) {
+    // Receives a message.
+    alert(e.data);
+  };
+  ws.onclose = function() {
+    alert("closed");
+  };
+  
+</script>
+```
 
 - Put Flash socket policy file to your server unless you use web-socket-ruby or em-websocket as your WebSocket server. See "Flash socket policy file" section below for details.
 
@@ -65,13 +69,15 @@ and use Developer Tools (Chrome/Safari) or Firebug (Firefox) to see if console.l
 
 3. Make sure you do NOT open your HTML page as local file e.g. file:///.../sample.html. web-socket-js doesn't work on local file. Open it via Web server e.g. http:///.../sample.html.
 
-4. If you are NOT using web-socket-ruby as your WebSocket server, you need to place Flash socket policy file on your server. See "Flash socket policy file" section below for details.
+4. Make sure you host your HTML page and WebSocketMain.swf in the same domain. Otherwise, see "How to host HTML file and SWF file in different domains" section.
 
-5. Check if sample.html bundled with web-socket-js works.
+5. If you are NOT using web-socket-ruby or em-websocket as your WebSocket server, you need to place Flash socket policy file on your server. See "Flash socket policy file" section below for details.
 
-6. Make sure the port used for WebSocket (10081 in example above) is not blocked by your server/client's firewall.
+6. Check if sample.html bundled with web-socket-js works.
 
-7. Install [debugger version of Flash Player](http://www.adobe.com/support/flashplayer/downloads.html) to see Flash errors.
+7. Make sure the port used for WebSocket (10081 in example above) is not blocked by your server/client's firewall.
+
+8. Install [debugger version of Flash Player](http://www.adobe.com/support/flashplayer/downloads.html) to see Flash errors.
 
 
 ## Supported environments
@@ -97,9 +103,9 @@ It may or may not work on other browsers such as Safari, Opera or IE 6. Patch fo
 
 This implementation uses Flash's socket, which means that your server must provide Flash socket policy file to declare the server accepts connections from Flash.
 
-If you use [web-socket-ruby](http://github.com/gimite/web-socket-ruby/tree/master) or [em-websocket](https://github.com/igrigorik/em-websocket), you don't need anything special, because web-socket-ruby handles Flash socket policy file request. But if you already provide socket policy file at port **843**, you need to modify the file to allow access to Web Socket port, because it precedes what web-socket-ruby provides.
+If you use [web-socket-ruby](http://github.com/gimite/web-socket-ruby/tree/master) or [em-websocket](https://github.com/igrigorik/em-websocket), you don't need anything special, because they handle Flash socket policy file request. But if you already provide socket policy file at port **843**, you need to modify the file to allow access to Web Socket port, because it precedes what the libraries provide.
 
-If you use other Web Socket server implementation, you need to provide socket policy file yourself. See [Setting up A Flash Socket Policy File](http://www.lightsphere.com/dev/articles/flash_socket_policy.html) for details and sample script to run socket policy file server. [node.js implementation is available here](http://github.com/LearnBoost/Socket.IO-node/blob/master/lib/socket.io/transports/flashsocket.js).
+If you use other Web Socket server implementation, you need to provide socket policy file yourself. See [Setting up A Flash Socket Policy File](http://www.lightsphere.com/dev/articles/flash_socket_policy.html) for details and sample script to run socket policy file server. [node.js implementation is available here](https://github.com/3rd-Eden/FlashPolicyFileServer).
 
 Actually, it's still better to provide socket policy file at port 843 even if you use web-socket-ruby or em-websocket. Flash always try to connect to port 843 first, so providing the file at port 843 makes startup faster.
 
