@@ -51,8 +51,9 @@
     }
     // Uses setTimeout() to make sure __createFlash() runs after the caller sets ws.onopen etc.
     // Otherwise, when onopen fires immediately, onopen is called before it is set.
-    setTimeout(function() {
+    self.__createTask = setTimeout(function() {
       WebSocket.__addTask(function() {
+        self.__createTask = null;
         WebSocket.__flash.create(
             self.__id, url, protocols, proxyHost || null, proxyPort || 0, headers || null);
       });
@@ -89,6 +90,12 @@
    * Close this web socket gracefully.
    */
   WebSocket.prototype.close = function() {
+    if (this.__createTask) {
+        clearTimeout(this.__createTask);
+        this.__createTask = null;
+        this.readyState = WebSocket.CLOSED;
+        return;
+    }
     if (this.readyState == WebSocket.CLOSED || this.readyState == WebSocket.CLOSING) {
       return;
     }
