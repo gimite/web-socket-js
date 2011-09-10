@@ -149,7 +149,7 @@
       events[i](event);
     }
     var handler = this["on" + event.type];
-    if (handler) handler(event);
+    if (handler) handler.apply(this, [event]);
   };
 
   /**
