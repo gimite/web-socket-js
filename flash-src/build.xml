@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
-  Ant build file which provides Yet another way (other than build.sh) to build SWF files.
+  Ant build file which provides yet another way (other than build.sh) to build SWF files.
   
   You need to copy build.properties.sample to build.properties and change FLEX_HOME
   for your environment.
