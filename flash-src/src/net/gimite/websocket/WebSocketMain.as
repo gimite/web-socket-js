@@ -41,7 +41,7 @@ public class WebSocketMain extends Sprite implements IWebSocketLogger{
   public function setDebug(val:Boolean):void {
     debug = val;
     if (val) {
-        log("debug enabled");
+      log("debug enabled");
     }
   }
   

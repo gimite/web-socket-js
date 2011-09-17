@@ -6,7 +6,6 @@
 package net.gimite.websocket {
 
 import com.adobe.net.proxies.RFC2817Socket;
-import com.gsolo.encryption.MD5;
 import com.gsolo.encryption.SHA1;
 import com.hurlant.crypto.tls.TLSConfig;
 import com.hurlant.crypto.tls.TLSEngine;
@@ -54,12 +53,7 @@ public class WebSocket extends EventDispatcher {
   private var expectedDigest:String;
   private var logger:IWebSocketLogger;
   private var b64encoder:Base64Encoder = new Base64Encoder();
-
-  private var frame_fin:int = -1;
-  private var frame_opcode:int = -1;
-  private var frame_hlength:uint = 0;
-  private var frame_plength:uint = 0;
-
+  
   public function WebSocket(
       id:int, url:String, protocols:Array, origin:String,
       proxyHost:String, proxyPort:int,
@@ -133,46 +127,48 @@ public class WebSocket extends EventDispatcher {
   }
   
   public function send(encData:String):int {
-    var raw_str:String = decodeURIComponent(encData);
-    var data:ByteArray = new ByteArray();
-    data.writeUTFBytes(raw_str);
-    var plength:uint = data.length;
+    var data:String = decodeURIComponent(encData);
+    var dataBytes:ByteArray = new ByteArray();
+    dataBytes.writeUTFBytes(data);
+    var plength:uint = dataBytes.length;
 
     if (readyState == OPEN) {
+      
       // TODO: binary API support
+      
+      // Generates a mask.
+      var mask:ByteArray = new ByteArray();
+      for (var i:int = 0; i < 4; i++) {
+        mask.writeByte(randomInt(0, 255));
+      }
+      
       var header:ByteArray = new ByteArray();
-
-      header.writeByte(0x80 | 0x01); // FIN + text opcode
-
+      header.writeByte(0x80 | 0x01);  // FIN + text opcode
       if (plength <= 125) {
-        header.writeByte(0x80 | plength); // Masked + length
+        header.writeByte(0x80 | plength);  // Masked + length
       } else if (plength > 125 && plength < 65536) {
-        header.writeByte(0x80 | 126);     // Masked + 126
+        header.writeByte(0x80 | 126);  // Masked + 126
         header.writeShort(plength);
       } else if (plength >= 65536 && plength < 4294967296) {
-        header.writeByte(0x80 | 127);     // Masked + 127
-        header.writeUnsignedInt(0); // zero high order bits
+        header.writeByte(0x80 | 127);  // Masked + 127
+        header.writeUnsignedInt(0);  // zero high order bits
         header.writeUnsignedInt(plength);
       } else {
         fatal("Send frame size too large");
         return 0;
       }
-        
-      // Generate a mask
-      var mask:Array = new Array(4);
-      for (var i:int = 0; i < 4; i++) {
-        mask[i] = randomInt(0, 255);
-        header.writeByte(mask[i]);
-      }
-      for (i = 0; i < data.length; i++) {
-        data[i] = mask[i%4] ^ data[i];
+      header.writeBytes(mask);
+      
+      for (i = 0; i < dataBytes.length; i++) {
+        dataBytes[i] = mask[i % 4] ^ dataBytes[i];
       }
 
       socket.writeBytes(header);
-      socket.writeBytes(data);
+      socket.writeBytes(dataBytes);
       socket.flush();
-      logger.log("sent: " + data);
+      logger.log("send: " + data);
       return -1;
+      
     } else if (readyState == CLOSING || readyState == CLOSED) {
       return plength;
     } else {
@@ -181,51 +177,54 @@ public class WebSocket extends EventDispatcher {
     }
   }
 
-  public function parseFrame():int {
-    var cur_pos:int = buffer.position;
+  private function parseFrame():WebSocketFrame {
+    
+    var frame:WebSocketFrame = new WebSocketFrame();
 
-    frame_hlength = 2;
-    if (buffer.length < frame_hlength) {
-      return -1;
+    frame.hlength = 2;
+    if (buffer.length < frame.hlength) {
+      return null;
     }
 
-    frame_opcode  = buffer[0] & 0x0f;
-    frame_fin     = (buffer[0] & 0x80) >> 7;
-    frame_plength = buffer[1] & 0x7f;
+    frame.opcode  = buffer[0] & 0x0f;
+    frame.fin     = (buffer[0] & 0x80) >> 7;
+    frame.plength = buffer[1] & 0x7f;
 
-    if (frame_plength == 126) {
-      frame_hlength = 4;
-      if (buffer.length < frame_hlength) {
-        return -1;
+    if (frame.plength == 126) {
+      
+      frame.hlength = 4;
+      if (buffer.length < frame.hlength) {
+        return null;
       }
-
       buffer.endian = Endian.BIG_ENDIAN;
       buffer.position = 2;
-      frame_plength = buffer.readUnsignedShort();
-      buffer.position = cur_pos;
-    } else if (frame_plength == 127) {
-      frame_hlength = 10;
-      if (buffer.length < frame_hlength) {
-        return -1;
+      frame.plength = buffer.readUnsignedShort();
+      
+    } else if (frame.plength == 127) {
+      
+      frame.hlength = 10;
+      if (buffer.length < frame.hlength) {
+        return null;
       }
-
       buffer.endian = Endian.BIG_ENDIAN;
       buffer.position = 2;
       // Protocol allows 64-bit length, but we only handle 32-bit
       var big:uint = buffer.readUnsignedInt(); // Skip high 32-bits
-      frame_plength = buffer.readUnsignedInt(); // Low 32-bits
-      buffer.position = cur_pos;
+      frame.plength = buffer.readUnsignedInt(); // Low 32-bits
       if (big != 0) {
-        onError("Frame length exceeds 4294967295. Bailing out!");
-        return -1;
+        fatal("Frame length exceeds 4294967295. Bailing out!");
+        return null;
       }
+      
     }
 
-    if (buffer.length < frame_hlength + frame_plength) {
-      return -1;
+    if (buffer.length < frame.hlength + frame.plength) {
+      return null;
     }
 
-    return 1;
+    frame.data = readUTFBytes(buffer, frame.hlength, frame.plength);
+    return frame;
+    
   }
   
   public function close(isError:Boolean = false):void {
@@ -233,9 +232,9 @@ public class WebSocket extends EventDispatcher {
     try {
       if (readyState == OPEN && !isError) {
         // TODO: send code and reason
-        socket.writeByte(0x80 | 0x08); // FIN + close opcode
-        socket.writeByte(0x80 | 0x00); // Masked + no payload
-        socket.writeUnsignedInt(0x00); // Mask
+        socket.writeByte(0x80 | 0x08);  // FIN + close opcode
+        socket.writeByte(0x80 | 0x00);  // Masked + no payload
+        socket.writeUnsignedInt(0x00);  // Mask
         socket.flush();
       }
       socket.close();
@@ -344,13 +343,13 @@ public class WebSocket extends EventDispatcher {
           this.dispatchEvent(new WebSocketEvent("open"));
         }
       } else {
-        if (parseFrame() == 1) {
-          var data:String = readUTFBytes(buffer, frame_hlength, frame_plength);
-          removeBufferBefore(frame_hlength + frame_plength);
+        var frame:WebSocketFrame = parseFrame();
+        if (frame) {
+          removeBufferBefore(frame.hlength + frame.plength);
           pos = -1;
-          if (frame_opcode == 0x01 || frame_opcode == 0x02) {
-            this.dispatchEvent(new WebSocketEvent("message", encodeURIComponent(data)));
-          } else if (frame_opcode == 0x08) {
+          if (frame.opcode == 0x01 || frame.opcode == 0x02) {
+            this.dispatchEvent(new WebSocketEvent("message", encodeURIComponent(frame.data)));
+          } else if (frame.opcode == 0x08) {
             // TODO: extract code and reason string
             logger.log("received closing packet");
             close();
