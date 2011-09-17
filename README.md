@@ -121,7 +121,7 @@ Note that it's technically possible that client sends arbitrary string as Cookie
 
 ### Proxy support
 
-[The WebSocket spec](http://tools.ietf.org/html/draft-ietf-hybi-thewebsocketprotocol-07) specifies instructions for User Agents to support proxied connections by implementing the HTTP CONNECT method.
+[The WebSocket spec](http://tools.ietf.org/html/draft-ietf-hybi-thewebsocketprotocol-10) specifies instructions for User Agents to support proxied connections by implementing the HTTP CONNECT method.
 
 The AS3 Socket class doesn't implement this mechanism, which renders it useless for the scenarios where the user trying to open a socket is behind a proxy. 
 
@@ -149,9 +149,8 @@ Install [Flex 4 SDK](http://opensource.adobe.com/wiki/display/flexsdk/Download+F
 
 ## WebSocket protocol versions
 
-- web-socket-js supports [Hixie 76 version](http://tools.ietf.org/html/draft-hixie-thewebsocketprotocol-76) of WebSocket protocol by default i.e. in [master branch](https://github.com/gimite/web-socket-js).
-- If you want to try newer [Hybi 07 version](http://tools.ietf.org/html/draft-ietf-hybi-thewebsocketprotocol-07), check out from [hybi-07 branch](https://github.com/gimite/web-socket-js/tree/hybi-07). This will become the master branch in the future, probably when Chrome switches to Hybi 07.
-- Hixie 75 or before is no longer supported.
+- web-socket-js supports [Hybi 10 version](http://tools.ietf.org/html/draft-ietf-hybi-thewebsocketprotocol-10) of WebSocket protocol.
+- Hixie 76 or before is no longer supported.
 
 
 ## License

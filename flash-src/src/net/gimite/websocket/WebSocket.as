@@ -1,7 +1,7 @@
 // Copyright: Hiroshi Ichikawa <http://gimite.net/en/>
 // License: New BSD License
 // Reference: http://dev.w3.org/html5/websockets/
-// Reference: http://tools.ietf.org/html/draft-ietf-hybi-thewebsocketprotocol-07
+// Reference: http://tools.ietf.org/html/draft-ietf-hybi-thewebsocketprotocol-10
 
 package net.gimite.websocket {
 
@@ -272,7 +272,7 @@ public class WebSocket extends EventDispatcher {
       "Connection: Upgrade\r\n" +
       "Sec-WebSocket-Key: {2}\r\n" +
       "Sec-WebSocket-Origin: {3}\r\n" +
-      "Sec-WebSocket-Version: 7\r\n" +
+      "Sec-WebSocket-Version: 8\r\n" +
       "Cookie: {4}\r\n" +
       "{5}" +
       "\r\n",
@@ -389,7 +389,7 @@ public class WebSocket extends EventDispatcher {
       onError(
         "The WebSocket server speaks old WebSocket protocol, " +
         "which is not supported by web-socket-js. " +
-        "It requires WebSocket protocol HyBi 7. " +
+        "It requires WebSocket protocol HyBi 10. " +
         "Try newer version of the server if available.");
       return false;
     }
