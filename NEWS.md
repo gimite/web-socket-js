@@ -3,4 +3,5 @@
       hixie-76. If you really need web-socket-js which speaks hixie-76, you can
       get it from
       [hixie-76 branch](https://github.com/gimite/web-socket-js/tree/hixie-76),
-      but the branch is no longer maintained.
+      but the branch is no longer maintained. Implementation of hybi-10 is
+      mostly done by Joel Martin (kanaka).
