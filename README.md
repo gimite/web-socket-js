@@ -149,8 +149,8 @@ Install [Flex 4 SDK](http://opensource.adobe.com/wiki/display/flexsdk/Download+F
 
 ## WebSocket protocol versions
 
-- web-socket-js supports [Hybi 10 version](http://tools.ietf.org/html/draft-ietf-hybi-thewebsocketprotocol-10) of WebSocket protocol.
-- Hixie 76 or before is no longer supported.
+- web-socket-js supports [hybi-10 version](http://tools.ietf.org/html/draft-ietf-hybi-thewebsocketprotocol-10) of WebSocket protocol.
+- web-socket-js doesn't speak other versions including hixie-76, which was supported by old version of this library. If you really need web-socket-js which speaks hixie-76, you can get it from [hixie-76 branch](https://github.com/gimite/web-socket-js/tree/hixie-76), but the branch is no longer maintained.
 
 
 ## License
