@@ -154,70 +154,15 @@ public class WebSocket extends EventDispatcher {
     }
   }
   
-  private function parseFrame():WebSocketFrame {
-    
-    var frame:WebSocketFrame = new WebSocketFrame();
-    var hlength:uint = 0;
-    var plength:uint = 0;
-    
-    hlength = 2;
-    if (buffer.length < hlength) {
-      return null;
-    }
-
-    frame.opcode  = buffer[0] & 0x0f;
-    frame.fin     = (buffer[0] & 0x80) != 0;
-    plength = buffer[1] & 0x7f;
-
-    if (plength == 126) {
-      
-      hlength = 4;
-      if (buffer.length < hlength) {
-        return null;
-      }
-      buffer.endian = Endian.BIG_ENDIAN;
-      buffer.position = 2;
-      plength = buffer.readUnsignedShort();
-      
-    } else if (plength == 127) {
-      
-      hlength = 10;
-      if (buffer.length < hlength) {
-        return null;
-      }
-      buffer.endian = Endian.BIG_ENDIAN;
-      buffer.position = 2;
-      // Protocol allows 64-bit length, but we only handle 32-bit
-      var big:uint = buffer.readUnsignedInt(); // Skip high 32-bits
-      plength = buffer.readUnsignedInt(); // Low 32-bits
-      if (big != 0) {
-        fatal("Frame length exceeds 4294967295. Bailing out!");
-        return null;
-      }
-      
-    }
-
-    if (buffer.length < hlength + plength) {
-      return null;
-    }
-    
-    frame.length = hlength + plength;
-    frame.payload = new ByteArray();
-    buffer.position = hlength;
-    buffer.readBytes(frame.payload, 0, plength);
-    return frame;
-    
-  }
-  
   public function close(isError:Boolean = false):void {
     logger.log("close");
     try {
       if (readyState == OPEN && !isError) {
         // TODO: send code and reason
-        socket.writeByte(0x80 | 0x08);  // FIN + close opcode
-        socket.writeByte(0x80 | 0x00);  // Masked + no payload
-        socket.writeUnsignedInt(0x00);  // Mask
-        socket.flush();
+        var frame:WebSocketFrame = new WebSocketFrame();
+        frame.opcode = OPCODE_CLOSE;
+        frame.payload = new ByteArray();
+        sendFrame(frame);
       }
       socket.close();
     } catch (ex:Error) { }
@@ -454,6 +399,61 @@ public class WebSocket extends EventDispatcher {
     
   }
 
+  private function parseFrame():WebSocketFrame {
+    
+    var frame:WebSocketFrame = new WebSocketFrame();
+    var hlength:uint = 0;
+    var plength:uint = 0;
+    
+    hlength = 2;
+    if (buffer.length < hlength) {
+      return null;
+    }
+
+    frame.opcode  = buffer[0] & 0x0f;
+    frame.fin     = (buffer[0] & 0x80) != 0;
+    plength = buffer[1] & 0x7f;
+
+    if (plength == 126) {
+      
+      hlength = 4;
+      if (buffer.length < hlength) {
+        return null;
+      }
+      buffer.endian = Endian.BIG_ENDIAN;
+      buffer.position = 2;
+      plength = buffer.readUnsignedShort();
+      
+    } else if (plength == 127) {
+      
+      hlength = 10;
+      if (buffer.length < hlength) {
+        return null;
+      }
+      buffer.endian = Endian.BIG_ENDIAN;
+      buffer.position = 2;
+      // Protocol allows 64-bit length, but we only handle 32-bit
+      var big:uint = buffer.readUnsignedInt(); // Skip high 32-bits
+      plength = buffer.readUnsignedInt(); // Low 32-bits
+      if (big != 0) {
+        fatal("Frame length exceeds 4294967295. Bailing out!");
+        return null;
+      }
+      
+    }
+
+    if (buffer.length < hlength + plength) {
+      return null;
+    }
+    
+    frame.length = hlength + plength;
+    frame.payload = new ByteArray();
+    buffer.position = hlength;
+    buffer.readBytes(frame.payload, 0, plength);
+    return frame;
+    
+  }
+  
   private function removeBufferBefore(pos:int):void {
     if (pos == 0) return;
     var nextBuffer:ByteArray = new ByteArray();
