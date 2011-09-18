@@ -41,10 +41,6 @@ public class WebSocket extends EventDispatcher {
   private static var OPCODE_PONG:int = 0x0a;
   
   private var id:int;
-  private var rawSocket:Socket;
-  private var tlsSocket:TLSSocket;
-  private var tlsConfig:TLSConfig;
-  private var socket:Socket;
   private var url:String;
   private var scheme:String;
   private var host:String;
@@ -52,15 +48,23 @@ public class WebSocket extends EventDispatcher {
   private var path:String;
   private var origin:String;
   private var requestedProtocols:Array;
+  private var cookie:String;
+  private var headers:String;
+  
+  private var rawSocket:Socket;
+  private var tlsSocket:TLSSocket;
+  private var tlsConfig:TLSConfig;
+  private var socket:Socket;
+  
   private var acceptedProtocol:String;
+  private var expectedDigest:String;
+  
   private var buffer:ByteArray = new ByteArray();
   private var headerState:int = 0;
   private var readyState:int = CONNECTING;
-  private var cookie:String;
-  private var headers:String;
-  private var expectedDigest:String;
+  
   private var logger:IWebSocketLogger;
-  private var b64encoder:Base64Encoder = new Base64Encoder();
+  private var base64Encoder:Base64Encoder = new Base64Encoder();
   
   public function WebSocket(
       id:int, url:String, protocols:Array, origin:String,
@@ -154,8 +158,7 @@ public class WebSocket extends EventDispatcher {
     }
   }
   
-  public function close(isError:Boolean = false):void {
-    logger.log("close");
+  public function close(isError:Boolean = false, byServer:Boolean = false):void {
     try {
       if (readyState == OPEN && !isError) {
         // TODO: send code and reason
@@ -164,10 +167,18 @@ public class WebSocket extends EventDispatcher {
         frame.payload = new ByteArray();
         sendFrame(frame);
       }
-      socket.close();
+      if (byServer || isError) {
+        socket.close();
+      }
     } catch (ex:Error) { }
-    readyState = CLOSED;
-    this.dispatchEvent(new WebSocketEvent(isError ? "error" : "close"));
+    if (byServer || isError) {
+      logger.log("closed");
+      readyState = CLOSED;
+      this.dispatchEvent(new WebSocketEvent(isError ? "error" : "close"));
+    } else {
+      logger.log("closing");
+      readyState = CLOSING;
+    }
   }
   
   private function onSocketConnect(event:Event):void {
@@ -287,8 +298,8 @@ public class WebSocket extends EventDispatcher {
               break;
             case OPCODE_CLOSE:
               // TODO: extract code and reason string
-              logger.log("received closing packet");
-              close();
+              logger.log("received closing frame");
+              close(false, true);
               break;
             case OPCODE_PING:
               sendPong(frame.payload);
@@ -467,9 +478,9 @@ public class WebSocket extends EventDispatcher {
     for (var i:int = 0; i < 16; i++) {
         vals = vals + randomInt(0, 127).toString();
     }
-    b64encoder.reset();
-    b64encoder.encode(vals);
-    return b64encoder.toString();
+    base64Encoder.reset();
+    base64Encoder.encode(vals);
+    return base64Encoder.toString();
   }
   
   private function readUTFBytes(buffer:ByteArray, start:int, numBytes:int):String {
