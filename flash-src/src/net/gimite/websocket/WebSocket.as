@@ -139,7 +139,13 @@ public class WebSocket extends EventDispatcher {
   }
   
   public function send(encData:String):int {
-    var data:String = decodeURIComponent(encData);
+    var data:String;
+    try {
+      data = decodeURIComponent(encData);
+    } catch (ex:URIError) {
+      logger.error("SYNTAX_ERR: URIError in send()");
+      return 0;
+    }
     var dataBytes:ByteArray = new ByteArray();
     dataBytes.writeUTFBytes(data);
     if (readyState == OPEN) {
@@ -158,23 +164,35 @@ public class WebSocket extends EventDispatcher {
     }
   }
   
-  public function close(isError:Boolean = false, byServer:Boolean = false):void {
+  public function close(code:int = 1000, reason:String = "",
+      isConnectionError:Boolean = false, byServer:Boolean = false):void {
+    var isError:Boolean = code != 1000 || isConnectionError;
+    if (!isConnectionError && code != 1000) {
+      logger.error("Fail connection: code=" + code + ", reason=" + reason);
+    }
     try {
-      if (readyState == OPEN && !isError) {
-        // TODO: send code and reason
+      if (readyState == OPEN && !isConnectionError) {
         var frame:WebSocketFrame = new WebSocketFrame();
         frame.opcode = OPCODE_CLOSE;
         frame.payload = new ByteArray();
+        if (code != 1000 && reason.length > 0) {
+          frame.payload.writeShort(code);
+          frame.payload.writeUTFBytes(reason);
+        }
         sendFrame(frame);
       }
       if (byServer || isError) {
         socket.close();
       }
-    } catch (ex:Error) { }
+    } catch (ex:Error) {
+      logger.error("Error: " + ex.message);
+    }
     if (byServer || isError) {
       logger.log("closed");
       readyState = CLOSED;
-      this.dispatchEvent(new WebSocketEvent(isError ? "error" : "close"));
+      var eventName:String =
+          (readyState != CONNECTING && isError) ? "error" : "close";
+      this.dispatchEvent(new WebSocketEvent(eventName));
     } else {
       logger.log("closing");
       readyState = CLOSING;
@@ -255,7 +273,7 @@ public class WebSocket extends EventDispatcher {
   private function onError(message:String):void {
     if (readyState == CLOSED) return;
     logger.error(message);
-    close(readyState != CONNECTING);
+    close(0, "", true);
   }
 
   private function onSocketData(event:ProgressEvent):void {
@@ -285,30 +303,38 @@ public class WebSocket extends EventDispatcher {
         if (frame) {
           removeBufferBefore(frame.length);
           pos = -1;
-          switch (frame.opcode) {
-            case OPCODE_CONTINUATION:
-              fatal("Received continuation frame, which is not implemented.");
-              break;
-            case OPCODE_TEXT:
-              var data:String = readUTFBytes(frame.payload, 0, frame.payload.length);
-              this.dispatchEvent(new WebSocketEvent("message", encodeURIComponent(data)));
-              break;
-            case OPCODE_BINARY:
-              fatal("Received binary data, which is not supported.");
-              break;
-            case OPCODE_CLOSE:
-              // TODO: extract code and reason string
-              logger.log("received closing frame");
-              close(false, true);
-              break;
-            case OPCODE_PING:
-              sendPong(frame.payload);
-              break;
-            case OPCODE_PONG:
-              break;
-            default:
-              fatal("Received unknown opcode: " + frame.opcode);
-              break;
+          if (frame.opcode >= 0x08 && frame.opcode <= 0x0f && frame.payload.length >= 126) {
+            close(1004, "Payload of control frame must be less than 126 bytes.");
+          } else {
+            switch (frame.opcode) {
+              case OPCODE_CONTINUATION:
+                close(1003, "Received continuation frame, which is not implemented.");
+                break;
+              case OPCODE_TEXT:
+                var data:String = readUTFBytes(frame.payload, 0, frame.payload.length);
+                try {
+                  this.dispatchEvent(new WebSocketEvent("message", encodeURIComponent(data)));
+                } catch (ex:URIError) {
+                  close(1007, "URIError while encoding the received data.");
+                }
+                break;
+              case OPCODE_BINARY:
+                close(1003, "Received binary data, which is not supported.");
+                break;
+              case OPCODE_CLOSE:
+                // TODO: extract code and reason string
+                logger.log("received closing frame");
+                close(1000, "", false, true);
+                break;
+              case OPCODE_PING:
+                sendPong(frame.payload);
+                break;
+              case OPCODE_PONG:
+                break;
+              default:
+                close(1002, "Received unknown opcode: " + frame.opcode);
+                break;
+            }
           }
         }
       }
