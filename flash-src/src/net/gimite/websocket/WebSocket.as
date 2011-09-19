@@ -474,12 +474,13 @@ public class WebSocket extends EventDispatcher {
   }
   
   private function generateKey():String {
-    var vals:String = "";
-    for (var i:int = 0; i < 16; i++) {
-        vals = vals + randomInt(0, 127).toString();
+    var vals:ByteArray = new ByteArray();
+    vals.length = 16;
+    for (var i:int = 0; i < vals.length; ++i) {
+        vals[i] = randomInt(0, 127);
     }
     base64Encoder.reset();
-    base64Encoder.encode(vals);
+    base64Encoder.encodeBytes(vals);
     return base64Encoder.toString();
   }
   
