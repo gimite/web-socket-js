@@ -41,6 +41,9 @@ public class WebSocket extends EventDispatcher {
   private static var OPCODE_PING:int = 0x09;
   private static var OPCODE_PONG:int = 0x0a;
   
+  private static var STATUS_SERVER_CLOSED:int = 5000;
+  private static var STATUS_CONNECTION_ERROR:int = 5001;
+  
   private var id:int;
   private var url:String;
   private var scheme:String;
@@ -140,7 +143,6 @@ public class WebSocket extends EventDispatcher {
   }
   
   public function send(encData:String):int {
-    logger.log("send: " + data);
     var data:String;
     try {
       data = decodeURIComponent(encData);
@@ -148,6 +150,7 @@ public class WebSocket extends EventDispatcher {
       logger.error("SYNTAX_ERR: URIError in send()");
       return 0;
     }
+    logger.log("send: " + data);
     var dataBytes:ByteArray = new ByteArray();
     dataBytes.writeUTFBytes(data);
     if (readyState == OPEN) {
@@ -168,34 +171,34 @@ public class WebSocket extends EventDispatcher {
     }
   }
   
-  public function close(code:int = 1000, reason:String = "",
-      isConnectionError:Boolean = false, byServer:Boolean = false):void {
-    var isError:Boolean = code != 1000 || isConnectionError;
-    if (!isConnectionError && code != 1000) {
+  public function close(code:int = 1000, reason:String = ""):void {
+    if (code != 1000 && code != STATUS_SERVER_CLOSED && code != STATUS_CONNECTION_ERROR) {
       logger.error("Fail connection: code=" + code + ", reason=" + reason);
     }
+    var closeConnection:Boolean = code != 1000;
     try {
-      if (readyState == OPEN && !isConnectionError) {
+      if (readyState == OPEN && code != STATUS_CONNECTION_ERROR) {
         var frame:WebSocketFrame = new WebSocketFrame();
         frame.opcode = OPCODE_CLOSE;
         frame.payload = new ByteArray();
-        if (code != 1000 && reason.length > 0) {
-          frame.payload.writeShort(code);
+        var sentCode:int = code == STATUS_SERVER_CLOSED ? 1000 : code;
+        if (sentCode != 1000 || reason.length > 0) {
+          frame.payload.writeShort(sentCode);
           frame.payload.writeUTFBytes(reason);
         }
         sendFrame(frame);
       }
-      if (byServer || isError) {
+      if (closeConnection) {
         socket.close();
       }
     } catch (ex:Error) {
       logger.error("Error: " + ex.message);
     }
-    if (byServer || isError) {
+    if (closeConnection) {
       logger.log("closed");
       readyState = CLOSED;
       var eventName:String =
-          (readyState != CONNECTING && isConnectionError) ? "error" : "close";
+          (readyState != CONNECTING && code == STATUS_CONNECTION_ERROR) ? "error" : "close";
       this.dispatchEvent(new WebSocketEvent(eventName));
     } else {
       logger.log("closing");
@@ -257,7 +260,7 @@ public class WebSocket extends EventDispatcher {
           "error communicating with Web Socket server at " + url +
           " (IoError: " + event.text + ")";
     }
-    onError(message);
+    onConnectionError(message);
   }
 
   private function onSocketSecurityError(event:SecurityErrorEvent):void {
@@ -271,13 +274,13 @@ public class WebSocket extends EventDispatcher {
           "error communicating with Web Socket server at " + url +
           " (SecurityError: " + event.text + ")";
     }
-    onError(message);
+    onConnectionError(message);
   }
   
-  private function onError(message:String):void {
+  private function onConnectionError(message:String):void {
     if (readyState == CLOSED) return;
     logger.error(message);
-    close(0, "", true);
+    close(STATUS_CONNECTION_ERROR);
   }
 
   private function onSocketData(event:ProgressEvent):void {
@@ -330,7 +333,7 @@ public class WebSocket extends EventDispatcher {
               case OPCODE_CLOSE:
                 // TODO: extract code and reason string
                 logger.log("received closing frame");
-                close(1000, "", false, true);
+                close(STATUS_SERVER_CLOSED);
                 break;
               case OPCODE_PING:
                 sendPong(frame.payload);
@@ -350,7 +353,7 @@ public class WebSocket extends EventDispatcher {
   private function validateHandshake(headerStr:String):Boolean {
     var lines:Array = headerStr.split(/\r\n/);
     if (!lines[0].match(/^HTTP\/1.1 101 /)) {
-      onError("bad response: " + lines[0]);
+      onConnectionError("bad response: " + lines[0]);
       return false;
     }
     var header:Object = {};
@@ -359,22 +362,22 @@ public class WebSocket extends EventDispatcher {
       if (lines[i].length == 0) continue;
       var m:Array = lines[i].match(/^(\S+): (.*)$/);
       if (!m) {
-        onError("failed to parse response header line: " + lines[i]);
+        onConnectionError("failed to parse response header line: " + lines[i]);
         return false;
       }
       header[m[1].toLowerCase()] = m[2];
       lowerHeader[m[1].toLowerCase()] = m[2].toLowerCase();
     }
     if (lowerHeader["upgrade"] != "websocket") {
-      onError("invalid Upgrade: " + header["Upgrade"]);
+      onConnectionError("invalid Upgrade: " + header["Upgrade"]);
       return false;
     }
     if (lowerHeader["connection"] != "upgrade") {
-      onError("invalid Connection: " + header["Connection"]);
+      onConnectionError("invalid Connection: " + header["Connection"]);
       return false;
     }
     if (!lowerHeader["sec-websocket-accept"]) {
-      onError(
+      onConnectionError(
         "The WebSocket server speaks old WebSocket protocol, " +
         "which is not supported by web-socket-js. " +
         "It requires WebSocket protocol HyBi 10. " +
@@ -383,13 +386,13 @@ public class WebSocket extends EventDispatcher {
     }
     var replyDigest:String = header["sec-websocket-accept"]
     if (replyDigest != expectedDigest) {
-      onError("digest doesn't match: " + replyDigest + " != " + expectedDigest);
+      onConnectionError("digest doesn't match: " + replyDigest + " != " + expectedDigest);
       return false;
     }
     if (requestedProtocols.length > 0) {
       acceptedProtocol = header["sec-websocket-protocol"];
       if (requestedProtocols.indexOf(acceptedProtocol) < 0) {
-        onError("protocol doesn't match: '" +
+        onConnectionError("protocol doesn't match: '" +
           acceptedProtocol + "' not in '" + requestedProtocols.join(",") + "'");
         return false;
       }
