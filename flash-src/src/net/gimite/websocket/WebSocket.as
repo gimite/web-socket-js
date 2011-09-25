@@ -13,6 +13,7 @@ import com.hurlant.crypto.tls.TLSSecurityParameters;
 import com.hurlant.crypto.tls.TLSSocket;
 
 import flash.display.*;
+import flash.errors.*;
 import flash.events.*;
 import flash.external.*;
 import flash.net.*;
@@ -139,6 +140,7 @@ public class WebSocket extends EventDispatcher {
   }
   
   public function send(encData:String):int {
+    logger.log("send: " + data);
     var data:String;
     try {
       data = decodeURIComponent(encData);
@@ -153,9 +155,11 @@ public class WebSocket extends EventDispatcher {
       var frame:WebSocketFrame = new WebSocketFrame();
       frame.opcode = OPCODE_TEXT;
       frame.payload = dataBytes;
-      sendFrame(frame);
-      logger.log("send: " + data);
-      return -1;
+      if (sendFrame(frame)) {
+        return -1;
+      } else {
+        return dataBytes.length;
+      }
     } else if (readyState == CLOSING || readyState == CLOSED) {
       return dataBytes.length;
     } else {
@@ -191,7 +195,7 @@ public class WebSocket extends EventDispatcher {
       logger.log("closed");
       readyState = CLOSED;
       var eventName:String =
-          (readyState != CONNECTING && isError) ? "error" : "close";
+          (readyState != CONNECTING && isConnectionError) ? "error" : "close";
       this.dispatchEvent(new WebSocketEvent(eventName));
     } else {
       logger.log("closing");
@@ -303,7 +307,9 @@ public class WebSocket extends EventDispatcher {
         if (frame) {
           removeBufferBefore(frame.length);
           pos = -1;
-          if (frame.opcode >= 0x08 && frame.opcode <= 0x0f && frame.payload.length >= 126) {
+          if (frame.rsv != 0) {
+            close(1002, "RSV must be 0.");
+          } else if (frame.opcode >= 0x08 && frame.opcode <= 0x0f && frame.payload.length >= 126) {
             close(1004, "Payload of control frame must be less than 126 bytes.");
           } else {
             switch (frame.opcode) {
@@ -391,14 +397,14 @@ public class WebSocket extends EventDispatcher {
     return true;
   }
 
-  private function sendPong(payload:ByteArray):void {
+  private function sendPong(payload:ByteArray):Boolean {
     var frame:WebSocketFrame = new WebSocketFrame();
     frame.opcode = OPCODE_PONG;
     frame.payload = payload;
-    sendFrame(frame);
+    return sendFrame(frame);
   }
   
-  private function sendFrame(frame:WebSocketFrame):void {
+  private function sendFrame(frame:WebSocketFrame):Boolean {
     
     var plength:uint = frame.payload.length;
     
@@ -409,7 +415,8 @@ public class WebSocket extends EventDispatcher {
     }
     
     var header:ByteArray = new ByteArray();
-    header.writeByte((frame.fin ? 0x80 : 0x00) | frame.opcode);  // FIN + opcode
+    // FIN + RSV + opcode
+    header.writeByte((frame.fin ? 0x80 : 0x00) | (frame.rsv << 4) | frame.opcode);
     if (plength <= 125) {
       header.writeByte(0x80 | plength);  // Masked + length
     } else if (plength > 125 && plength < 65536) {
@@ -430,9 +437,17 @@ public class WebSocket extends EventDispatcher {
       maskedPayload[i] = mask[i % 4] ^ frame.payload[i];
     }
 
-    socket.writeBytes(header);
-    socket.writeBytes(maskedPayload);
-    socket.flush();
+    try {
+      socket.writeBytes(header);
+      socket.writeBytes(maskedPayload);
+      socket.flush();
+    } catch (ex:IOError) {
+      logger.error("IOError while sending frame");
+      // TODO Fire close event if it hasn't
+      readyState = CLOSED;
+      return false;
+    }
+    return true;
     
   }
 
@@ -447,8 +462,9 @@ public class WebSocket extends EventDispatcher {
       return null;
     }
 
+    frame.fin = (buffer[0] & 0x80) != 0;
+    frame.rsv = (buffer[0] & 0x70) >> 4;
     frame.opcode  = buffer[0] & 0x0f;
-    frame.fin     = (buffer[0] & 0x80) != 0;
     plength = buffer[1] & 0x7f;
 
     if (plength == 126) {

@@ -7,6 +7,7 @@ import flash.utils.ByteArray;
 
 public class WebSocketFrame {
   public var fin:Boolean = true;
+  public var rsv:int = 0;
   public var opcode:int = -1;
   public var payload:ByteArray;
   // Not used when used as a parameter of sendFrame().
