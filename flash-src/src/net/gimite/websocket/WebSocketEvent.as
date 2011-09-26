@@ -14,6 +14,9 @@ public class WebSocketEvent extends Event {
   public static const ERROR:String = "error";
 
   public var message:String;
+  public var wasClean:Boolean;
+  public var code:int;
+  public var reason:String;
   
   public function WebSocketEvent(
       type:String, message:String = null, bubbles:Boolean = false, cancelable:Boolean = false) {
@@ -22,7 +25,12 @@ public class WebSocketEvent extends Event {
   }
   
   public override function clone():Event {
-    return new WebSocketEvent(this.type, this.message, this.bubbles, this.cancelable);
+    var event:WebSocketEvent = new WebSocketEvent(
+        this.type, this.message, this.bubbles, this.cancelable);
+    event.wasClean = wasClean;
+    event.code = code;
+    event.reason = reason;
+    return event;
   }
   
   public override function toString():String {

@@ -27,22 +27,24 @@ import mx.utils.*;
 
 public class WebSocket extends EventDispatcher {
   
-  private static var WEB_SOCKET_GUID:String = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+  private static const WEB_SOCKET_GUID:String = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
   
-  private static var CONNECTING:int = 0;
-  private static var OPEN:int = 1;
-  private static var CLOSING:int = 2;
-  private static var CLOSED:int = 3;
+  private static const CONNECTING:int = 0;
+  private static const OPEN:int = 1;
+  private static const CLOSING:int = 2;
+  private static const CLOSED:int = 3;
   
-  private static var OPCODE_CONTINUATION:int = 0x00;
-  private static var OPCODE_TEXT:int = 0x01;
-  private static var OPCODE_BINARY:int = 0x02;
-  private static var OPCODE_CLOSE:int = 0x08;
-  private static var OPCODE_PING:int = 0x09;
-  private static var OPCODE_PONG:int = 0x0a;
+  private static const OPCODE_CONTINUATION:int = 0x00;
+  private static const OPCODE_TEXT:int = 0x01;
+  private static const OPCODE_BINARY:int = 0x02;
+  private static const OPCODE_CLOSE:int = 0x08;
+  private static const OPCODE_PING:int = 0x09;
+  private static const OPCODE_PONG:int = 0x0a;
   
-  private static var STATUS_SERVER_CLOSED:int = 5000;
-  private static var STATUS_CONNECTION_ERROR:int = 5001;
+  private static const STATUS_NORMAL_CLOSURE:int = 1000;
+  private static const STATUS_NO_CODE:int = 1005;
+  private static const STATUS_CLOSED_ABNORMALLY:int = 1006;
+  private static const STATUS_CONNECTION_ERROR:int = 5000;
   
   private var id:int;
   private var url:String;
@@ -171,19 +173,23 @@ public class WebSocket extends EventDispatcher {
     }
   }
   
-  public function close(code:int = 1000, reason:String = ""):void {
-    if (code != 1000 && code != STATUS_SERVER_CLOSED && code != STATUS_CONNECTION_ERROR) {
-      logger.error("Fail connection: code=" + code + ", reason=" + reason);
+  public function close(
+      code:int = STATUS_NO_CODE, reason:String = "", origin:String = "client"):void {
+    if (code != STATUS_NORMAL_CLOSURE &&
+        code != STATUS_NO_CODE &&
+        code != STATUS_CONNECTION_ERROR) {
+      logger.error(StringUtil.substitute(
+          "Fail connection by {0}: code={1} reason={2}", origin, code, reason));
     }
-    var closeConnection:Boolean = code != 1000;
+    var closeConnection:Boolean =
+        code == STATUS_CONNECTION_ERROR || origin == "server";
     try {
       if (readyState == OPEN && code != STATUS_CONNECTION_ERROR) {
         var frame:WebSocketFrame = new WebSocketFrame();
         frame.opcode = OPCODE_CLOSE;
         frame.payload = new ByteArray();
-        var sentCode:int = code == STATUS_SERVER_CLOSED ? 1000 : code;
-        if (sentCode != 1000 || reason.length > 0) {
-          frame.payload.writeShort(sentCode);
+        if (origin == "client" && code != STATUS_NO_CODE) {
+          frame.payload.writeShort(code);
           frame.payload.writeUTFBytes(reason);
         }
         sendFrame(frame);
@@ -196,10 +202,15 @@ public class WebSocket extends EventDispatcher {
     }
     if (closeConnection) {
       logger.log("closed");
+      var fireErrorEvent:Boolean = readyState != CONNECTING && code == STATUS_CONNECTION_ERROR;
       readyState = CLOSED;
-      var eventName:String =
-          (readyState != CONNECTING && code == STATUS_CONNECTION_ERROR) ? "error" : "close";
-      this.dispatchEvent(new WebSocketEvent(eventName));
+      if (fireErrorEvent) {
+        dispatchEvent(new WebSocketEvent("error"));
+      } else {
+        var wasClean:Boolean = code != STATUS_CLOSED_ABNORMALLY && code != STATUS_CONNECTION_ERROR;
+        var eventCode:int = code == STATUS_CONNECTION_ERROR ? STATUS_CLOSED_ABNORMALLY : code;
+        dispatchCloseEvent(wasClean, eventCode, reason);
+      }
     } else {
       logger.log("closing");
       readyState = CLOSING;
@@ -248,7 +259,7 @@ public class WebSocket extends EventDispatcher {
   private function onSocketClose(event:Event):void {
     logger.log("closed");
     readyState = CLOSED;
-    this.dispatchEvent(new WebSocketEvent("close"));
+    dispatchCloseEvent(false, STATUS_CLOSED_ABNORMALLY, "");
   }
 
   private function onSocketIoError(event:IOErrorEvent):void {
@@ -331,9 +342,17 @@ public class WebSocket extends EventDispatcher {
                 close(1003, "Received binary data, which is not supported.");
                 break;
               case OPCODE_CLOSE:
-                // TODO: extract code and reason string
+                // Extracts code and reason string.
+                var code:int = STATUS_NO_CODE;
+                var reason:String = "";
+                if (frame.payload.length >= 2) {
+                  frame.payload.endian = Endian.BIG_ENDIAN;
+                  frame.payload.position = 0;
+                  code = frame.payload.readUnsignedShort();
+                  reason = readUTFBytes(frame.payload, 2, frame.payload.length - 2);
+                }
                 logger.log("received closing frame");
-                close(STATUS_SERVER_CLOSED);
+                close(code, reason, "server");
                 break;
               case OPCODE_PING:
                 sendPong(frame.payload);
@@ -508,6 +527,14 @@ public class WebSocket extends EventDispatcher {
     buffer.readBytes(frame.payload, 0, plength);
     return frame;
     
+  }
+  
+  private function dispatchCloseEvent(wasClean:Boolean, code:int, reason:String):void {
+    var event:WebSocketEvent = new WebSocketEvent("close");
+    event.wasClean = wasClean;
+    event.code = code;
+    event.reason = reason;
+    dispatchEvent(event);
   }
   
   private function removeBufferBefore(pos:int):void {

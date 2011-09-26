@@ -157,6 +157,7 @@
    * @param {Object} flashEvent
    */
   WebSocket.prototype.__handleEvent = function(flashEvent) {
+    
     if ("readyState" in flashEvent) {
       this.readyState = flashEvent.readyState;
     }
@@ -168,8 +169,10 @@
     if (flashEvent.type == "open" || flashEvent.type == "error") {
       jsEvent = this.__createSimpleEvent(flashEvent.type);
     } else if (flashEvent.type == "close") {
-      // TODO implement jsEvent.wasClean
       jsEvent = this.__createSimpleEvent("close");
+      jsEvent.wasClean = flashEvent.wasClean ? true : false;
+      jsEvent.code = flashEvent.code;
+      jsEvent.reason = flashEvent.reason;
     } else if (flashEvent.type == "message") {
       var data = decodeURIComponent(flashEvent.message);
       jsEvent = this.__createMessageEvent("message", data);
@@ -178,6 +181,7 @@
     }
     
     this.dispatchEvent(jsEvent);
+    
   };
   
   WebSocket.prototype.__createSimpleEvent = function(type) {

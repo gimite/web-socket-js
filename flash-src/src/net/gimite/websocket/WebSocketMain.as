@@ -75,6 +75,15 @@ public class WebSocketMain extends Sprite implements IWebSocketLogger{
     if (event.message !== null) {
       eventObj.message = event.message;
     }
+    if (event.wasClean) {
+      eventObj.wasClean = event.wasClean;
+    }
+    if (event.code) {
+      eventObj.code = event.code;
+    }
+    if (event.reason !== null) {
+      eventObj.reason = event.reason;
+    }
     return eventObj;
   }
   
