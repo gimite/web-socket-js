@@ -323,6 +323,8 @@ public class WebSocket extends EventDispatcher {
           pos = -1;
           if (frame.rsv != 0) {
             close(1002, "RSV must be 0.");
+          } else if (frame.mask) {
+            close(1002, "Frame from server must not be masked.");
           } else if (frame.opcode >= 0x08 && frame.opcode <= 0x0f && frame.payload.length >= 126) {
             close(1004, "Payload of control frame must be less than 126 bytes.");
           } else {
@@ -339,6 +341,8 @@ public class WebSocket extends EventDispatcher {
                 }
                 break;
               case OPCODE_BINARY:
+                // See https://github.com/gimite/web-socket-js/pull/89
+                // for discussion about supporting binary data.
                 close(1003, "Received binary data, which is not supported.");
                 break;
               case OPCODE_CLOSE:
@@ -487,6 +491,9 @@ public class WebSocket extends EventDispatcher {
     frame.fin = (buffer[0] & 0x80) != 0;
     frame.rsv = (buffer[0] & 0x70) >> 4;
     frame.opcode  = buffer[0] & 0x0f;
+    // Payload unmasking is not implemented because masking frames from server
+    // is not allowed. This field is used only for error checking.
+    frame.mask = (buffer[1] & 0x80) != 0;
     plength = buffer[1] & 0x7f;
 
     if (plength == 126) {
