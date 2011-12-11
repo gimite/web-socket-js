@@ -213,6 +213,7 @@
   WebSocket.CLOSING = 2;
   WebSocket.CLOSED = 3;
 
+  WebSocket.__initialized = false;
   WebSocket.__flash = null;
   WebSocket.__instances = {};
   WebSocket.__tasks = [];
@@ -232,7 +233,9 @@
    * Loads WebSocketMain.swf and creates WebSocketMain object in Flash.
    */
   WebSocket.__initialize = function() {
-    if (WebSocket.__flash) return;
+    
+    if (WebSocket.__initialized) return;
+    WebSocket.__initialized = true;
     
     if (WebSocket.__swfLocation) {
       // For backword compatibility.
@@ -290,7 +293,9 @@
         if (!e.success) {
           logger.error("[WebSocket] swfobject.embedSWF failed");
         }
-      });
+      }
+    );
+    
   };
   
   /**
@@ -365,14 +370,19 @@
   };
   
   if (!window.WEB_SOCKET_DISABLE_AUTO_INITIALIZATION) {
-    if (window.addEventListener) {
-      window.addEventListener("load", function(){
-        WebSocket.__initialize();
-      }, false);
+    var init = function(){
+      WebSocket.__initialize();
+    };
+    if (document.readyState == "complete") {
+      // Document is already loaded.
+      init();
+    } else if (window.addEventListener) {
+      // This fires earlier but is not supported by all browsers.
+      document.addEventListener("DOMContentLoaded", init, false);
+      // This is supported by all browsers.
+      window.addEventListener("load", init, false);
     } else {
-      window.attachEvent("onload", function(){
-        WebSocket.__initialize();
-      });
+      window.attachEvent("onload", init);
     }
   }
   
