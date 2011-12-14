@@ -370,20 +370,12 @@
   };
   
   if (!window.WEB_SOCKET_DISABLE_AUTO_INITIALIZATION) {
-    var init = function(){
+    // NOTE:
+    //   This fires immediately if web_socket.js is dynamically loaded after
+    //   the document is loaded.
+    swfobject.addDomLoadEvent(function() {
       WebSocket.__initialize();
-    };
-    if (document.readyState == "complete") {
-      // Document is already loaded.
-      init();
-    } else if (window.addEventListener) {
-      // This fires earlier but is not supported by all browsers.
-      document.addEventListener("DOMContentLoaded", init, false);
-      // This is supported by all browsers.
-      window.addEventListener("load", init, false);
-    } else {
-      window.attachEvent("onload", init);
-    }
+    });
   }
   
 })();
