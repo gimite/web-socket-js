@@ -5,7 +5,15 @@
 
 (function() {
   
-  if (window.WebSocket && !window.WEB_SOCKET_FORCE_FLASH) return;
+  if (window.WEB_SOCKET_FORCE_FLASH) {
+    // Keeps going.
+  } else if (window.WebSocket) {
+    return;
+  } else if (window.MozWebSocket) {
+    // Firefox.
+    window.WebSocket = MozWebSocket;
+    return;
+  }
   
   var logger;
   if (window.WEB_SOCKET_LOGGER) {
@@ -30,14 +38,14 @@
   }
 
   /**
-   * This class represents a faux web socket.
+   * Our own implementation of WebSocket class using Flash.
    * @param {string} url
    * @param {array or string} protocols
    * @param {string} proxyHost
    * @param {int} proxyPort
    * @param {string} headers
    */
-  WebSocket = function(url, protocols, proxyHost, proxyPort, headers) {
+  window.WebSocket = function(url, protocols, proxyHost, proxyPort, headers) {
     var self = this;
     self.__id = WebSocket.__nextId++;
     WebSocket.__instances[self.__id] = self;
