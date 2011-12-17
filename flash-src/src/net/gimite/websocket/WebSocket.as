@@ -156,7 +156,6 @@ public class WebSocket extends EventDispatcher {
     var dataBytes:ByteArray = new ByteArray();
     dataBytes.writeUTFBytes(data);
     if (readyState == OPEN) {
-      // TODO: binary API support
       var frame:WebSocketFrame = new WebSocketFrame();
       frame.opcode = OPCODE_TEXT;
       frame.payload = dataBytes;
@@ -467,10 +466,13 @@ public class WebSocket extends EventDispatcher {
       socket.writeBytes(header);
       socket.writeBytes(maskedPayload);
       socket.flush();
-    } catch (ex:IOError) {
-      logger.error("IOError while sending frame");
-      // TODO Fire close event if it hasn't
-      readyState = CLOSED;
+    } catch (ex:Error) {
+      logger.error("Error while sending frame: " + ex.message);
+      setTimeout(function():void {
+        if (readyState != CLOSED) {
+          close(STATUS_CONNECTION_ERROR);
+        }
+      }, 0);
       return false;
     }
     return true;

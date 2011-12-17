@@ -99,10 +99,10 @@
    */
   WebSocket.prototype.close = function() {
     if (this.__createTask) {
-        clearTimeout(this.__createTask);
-        this.__createTask = null;
-        this.readyState = WebSocket.CLOSED;
-        return;
+      clearTimeout(this.__createTask);
+      this.__createTask = null;
+      this.readyState = WebSocket.CLOSED;
+      return;
     }
     if (this.readyState == WebSocket.CLOSED || this.readyState == WebSocket.CLOSING) {
       return;
