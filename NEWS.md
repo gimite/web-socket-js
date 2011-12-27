@@ -1,3 +1,8 @@
+- 2011-12-27
+    - web-socket-js now speaks WebSocket defined in RFC 6455, which is
+      equivalent to hybi-13 to hybi-17. It no longer supports old draft
+      protocols.
+
 - 2011-12-17
     - web-socket-js now uses MozWebSocket when available. i.e. When you load
       web_socket.js, WebSocket is defined as alias of MozWebSocket when

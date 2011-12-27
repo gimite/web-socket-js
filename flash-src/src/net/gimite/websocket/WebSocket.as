@@ -1,7 +1,7 @@
 // Copyright: Hiroshi Ichikawa <http://gimite.net/en/>
 // License: New BSD License
 // Reference: http://dev.w3.org/html5/websockets/
-// Reference: http://tools.ietf.org/html/draft-ietf-hybi-thewebsocketprotocol-10
+// Reference: http://tools.ietf.org/html/rfc6455
 
 package net.gimite.websocket {
 
@@ -244,8 +244,8 @@ public class WebSocket extends EventDispatcher {
       "Upgrade: websocket\r\n" +
       "Connection: Upgrade\r\n" +
       "Sec-WebSocket-Key: {2}\r\n" +
-      "Sec-WebSocket-Origin: {3}\r\n" +
-      "Sec-WebSocket-Version: 8\r\n" +
+      "Origin: {3}\r\n" +
+      "Sec-WebSocket-Version: 13\r\n" +
       "Cookie: {4}\r\n" +
       "{5}" +
       "\r\n",
