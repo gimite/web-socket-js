@@ -54,13 +54,13 @@ $ ruby web-socket-ruby/samples/echo_server.rb example.com 10081
 
 If it doesn't work, try these:
 
-1. Try Chrome and Firefox 3.x.
+1. Try Chrome and IE 8 or 9.
 
    - It doesn't work on Chrome:<br>
      It's likely an issue of your code or the server. Debug your code as usual e.g. using console.log.
-   - It works on Chrome but it doesn't work on Firefox:<br>
+   - It works on Chrome but it doesn't work on IE:<br>
      It's likely an issue of web-socket-js specific configuration (e.g. 3 and 4 below).
-   - It works on both Chrome and Firefox, but it doesn't work on your browser:<br>
+   - It works on both Chrome and IE, but it doesn't work on your browser:<br>
      Check "Supported environment" section below. Your browser may not be supported by web-socket-js.
 
 2. Add this line before your code:
@@ -79,13 +79,20 @@ and use Developer Tools (Chrome/Safari) or Firebug (Firefox) to see if console.l
 
 8. Install [debugger version of Flash Player](http://www.adobe.com/support/flashplayer/downloads.html) to see Flash errors.
 
+9. If you followed the steps above and you still have an issue, please [report here](https://github.com/gimite/web-socket-js/issues) with these information:
+
+   - The WebSocket server library you use (e.g. em-websocket, pywebsocket) and its version
+   - The Web browser you use and its version
+   - The exact message you are trying to send from the server or the client
+   - The result of all steps above, especially error message in step 2 if any
+
 
 ## Supported environments
 
 It should work on:
 
-- Google Chrome 4 or later (just uses native implementation)
-- Firefox 3.x, 4.x, Internet Explorer 8, 9 + Flash Player 10 or later
+- Google Chrome 4 or later, Firefox 6 or later (uses native WebSocket or MozWebSocket implementation)
+- Firefox 3 to 5, Internet Explorer 8, 9 + Flash Player 10 or later
 
 It may or may not work on other browsers such as Safari, Opera or IE 6. Patch for these browsers are appreciated, but I will not work on fixing issues specific to these browsers by myself.
 
