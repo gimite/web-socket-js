@@ -68,6 +68,10 @@
     }, 0);
   };
 
+
+  // flag to check implementation of WebSocket
+  WebSocket.flash_implemented = true;
+
   /**
    * Send data to the web socket.
    * @param {string} data  The data to send to the socket.
