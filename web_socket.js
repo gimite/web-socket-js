@@ -68,10 +68,6 @@
     }, 0);
   };
 
-
-  // flag to check implementation of WebSocket
-  WebSocket.flash_implemented = true;
-
   /**
    * Send data to the web socket.
    * @param {string} data  The data to send to the socket.
@@ -225,6 +221,8 @@
   WebSocket.CLOSING = 2;
   WebSocket.CLOSED = 3;
 
+  // Field to check implementation of WebSocket.
+  WebSocket.__isFlashImplementation = true;
   WebSocket.__initialized = false;
   WebSocket.__flash = null;
   WebSocket.__instances = {};
