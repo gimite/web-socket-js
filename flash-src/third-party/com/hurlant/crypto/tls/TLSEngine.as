@@ -715,6 +715,7 @@ package com.hurlant.crypto.tls {
 				rec.writeBytes(data, offset, 16384);
 				rec.position = 0;
 				sendRecord(PROTOCOL_APPLICATION_DATA, rec);
+				rec.length = 0;
 				offset += 16384;
 				len -= 16384;
 			}
