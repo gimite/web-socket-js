@@ -382,13 +382,15 @@ public class WebSocket extends EventDispatcher {
     var lowerHeader:Object = {};
     for (var i:int = 1; i < lines.length; ++i) {
       if (lines[i].length == 0) continue;
-      var m:Array = lines[i].match(/^(\S+): (.*)$/);
+      var m:Array = lines[i].match(/^(\S+):(.*)$/);
       if (!m) {
         onConnectionError("failed to parse response header line: " + lines[i]);
         return false;
       }
-      header[m[1].toLowerCase()] = m[2];
-      lowerHeader[m[1].toLowerCase()] = m[2].toLowerCase();
+      var key:String = m[1].toLowerCase();
+      var value:String = StringUtil.trim(m[2]);
+      header[key] = value;
+      lowerHeader[key] = value.toLowerCase();
     }
     if (lowerHeader["upgrade"] != "websocket") {
       onConnectionError("invalid Upgrade: " + header["Upgrade"]);
