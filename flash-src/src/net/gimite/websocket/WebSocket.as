@@ -66,6 +66,7 @@ public class WebSocket extends EventDispatcher {
   private var expectedDigest:String;
   
   private var buffer:ByteArray = new ByteArray();
+  private var fragmentsBuffer:ByteArray = null;
   private var headerState:int = 0;
   private var readyState:int = CONNECTING;
   
@@ -329,14 +330,32 @@ public class WebSocket extends EventDispatcher {
           } else {
             switch (frame.opcode) {
               case OPCODE_CONTINUATION:
-                close(1003, "Received continuation frame, which is not implemented.");
+                if (fragmentsBuffer == null) {
+                  close(1002, "Unexpected continuation frame");
+                } else {
+                  fragmentsBuffer.writeBytes(frame.payload);
+                  if (frame.fin) {
+                    data = readUTFBytes(fragmentsBuffer, 0, fragmentsBuffer.length);
+                    try {
+                      this.dispatchEvent(new WebSocketEvent("message", encodeURIComponent(data)));
+                    } catch (ex:URIError) {
+                      close(1007, "URIError while encoding the received data.");
+                    }
+                    fragmentsBuffer = null;
+                  }
+                }
                 break;
               case OPCODE_TEXT:
+                if (frame.fin) {
                 var data:String = readUTFBytes(frame.payload, 0, frame.payload.length);
                 try {
                   this.dispatchEvent(new WebSocketEvent("message", encodeURIComponent(data)));
                 } catch (ex:URIError) {
                   close(1007, "URIError while encoding the received data.");
+                }
+                } else {
+                  fragmentsBuffer = new ByteArray();
+                  fragmentsBuffer.writeBytes(frame.payload);
                 }
                 break;
               case OPCODE_BINARY:
