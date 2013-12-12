@@ -205,7 +205,16 @@
   WebSocket.prototype.__createMessageEvent = function(type, data) {
     if (document.createEvent && window.MessageEvent && !window.opera) {
       var event = document.createEvent("MessageEvent");
-      event.initMessageEvent("message", false, false, data, null, null, window, null);
+      if (event.initMessageEvent) {	// IE does not accept 'new MessageEvent' so this has to stay
+      	event.initMessageEvent("message", false, false, data, null, null, window, null);
+      } else if (event.initEvent) {	// needed for FF 26 and possible others soon...
+      	var event = new MessageEvent('message', {
+      		'view': window,
+      		'bubbles': false,
+      		'cancelable': false,
+      		'data': data
+      	});
+      }
       return event;
     } else {
       // IE and Opera, the latter one truncates the data parameter after any 0x00 bytes.
