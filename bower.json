@@ -1,0 +1,20 @@
+{
+  "name": "gimite/web-socket-js",
+  "version": "1.0.1",
+  "description": "HTML5 Web Socket implementation powered by Flash",
+  "license": "New BSD",
+  "ignore": [
+    "flash-src",
+    "src",
+    ".gitignore",
+    "LICENSE.txt",
+    "NEWS.md",
+    "README.md",
+    "sample.html",
+    "WebSocketMainInsecure.zip"
+  ],
+  "dependencies": {
+  },
+  "devDependencies": {
+  }
+}
