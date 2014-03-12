@@ -206,11 +206,10 @@ public class WebSocket extends EventDispatcher {
       readyState = CLOSED;
       if (fireErrorEvent) {
         dispatchEvent(new WebSocketEvent("error"));
-      } else {
-        var wasClean:Boolean = code != STATUS_CLOSED_ABNORMALLY && code != STATUS_CONNECTION_ERROR;
-        var eventCode:int = code == STATUS_CONNECTION_ERROR ? STATUS_CLOSED_ABNORMALLY : code;
-        dispatchCloseEvent(wasClean, eventCode, reason);
       }
+      var wasClean:Boolean = code != STATUS_CLOSED_ABNORMALLY && code != STATUS_CONNECTION_ERROR;
+      var eventCode:int = code == STATUS_CONNECTION_ERROR ? STATUS_CLOSED_ABNORMALLY : code;
+      dispatchCloseEvent(wasClean, eventCode, reason);
     } else {
       logger.log("closing");
       readyState = CLOSING;
