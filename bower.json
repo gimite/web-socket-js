@@ -1,6 +1,5 @@
 {
   "name": "gimite/web-socket-js",
-  "version": "1.0.1",
   "description": "HTML5 Web Socket implementation powered by Flash",
   "license": "New BSD",
   "ignore": [
