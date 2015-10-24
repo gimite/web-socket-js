@@ -246,7 +246,7 @@ public class WebSocket extends EventDispatcher {
       "Sec-WebSocket-Key: {2}\r\n" +
       "Origin: {3}\r\n" +
       "Sec-WebSocket-Version: 13\r\n" +
-      "Cookie: {4}\r\n" +
+      (cookie == "" ? "" : "Cookie: {4}\r\n") +
       "{5}" +
       "\r\n",
       path, hostValue, key, origin, cookie, opt);
