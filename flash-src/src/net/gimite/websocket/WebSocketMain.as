@@ -150,8 +150,14 @@ public class WebSocketMain extends Sprite implements IWebSocketLogger{
    */
   public function processEvents():void {
     if (eventQueue.length == 0) return;
-    if (!ExternalInterface.call("WebSocket.__onFlashEvent")) {
-      setTimeout(processEvents, 500);
+    try {
+      if (!ExternalInterface.call("WebSocket.__onFlashEvent")) {
+        setTimeout(processEvents, 500);
+      }
+    } catch(e:SecurityError){
+      trace(
+          "Caught SecurityError when trying to processEvents. " +
+          "This may happen when the window is going to be closed.");
     }
   }
   
